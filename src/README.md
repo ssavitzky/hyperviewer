@@ -3,23 +3,35 @@ Viewer for n-dimensional objects
 
 ## Notes
 
-### State
+### State:
 
 The state of the viewer is determined by:
 
 * the size of the canvas -- assume square
-* the figure
+* the figure, including the lists of transformed vertices.
 * the list of rotations [axis1, axis2, angle, increment]
   - each axis is controlled by 2 sliders, one 0-90 degrees, one 0-?
 	degrees/second; the 0-90 control could be a dial instead.
-	
 * the perspective [dz, ... dt] - doesn't need x or y, obviously.
   - controlled by dim-2 sliders.
 
+### Controls:
+
+One possible shape for the rotation controls is a quadrant dial, with a small
+slider underneath for the rate of change.  Or a circle with the rate control
+and label inside -- that would be the best way to see what's actually going
+on.  Alternatively, one could use a single control with a plane selector, or
+maybe a small number of controls.
+
+Possibly a better -- certainly simpler in the short run -- choice might be
+sliders.  X* under the viewer, Y* on one side, ZW on the other side.
+
+Another possible choice would be to distribute dials in 3-d.  (eep)
+
 ### Perspective:
 
-Each axis can be handled separately, and the x and y axes get the same
-treatment, so without loss of generality we have:
+The x and y axes can be handled independently.  It's not entirely clear how to
+handle the zn axes.
 
 * [x, z] = the relevant coordinates of the vertex v at [x, y, z1, z2, ...]
 * p = the position of the camera along the negative z axis (so the camera is
@@ -51,5 +63,9 @@ as p goes to infinity.
 
 Alternatively, and much simpler, one could control the view with the viewing
 angle (2A, because this is only one side).  That would make p = 1/sin(A) =
-sec(A), and q = cot(A).
+sec(A), and q = cot(A).  Then Q/q = Q tan(A).
+
+Now, let's consider the multidimensional case.  The line pq connects the
+point with the camera; the triangle in question is in the plane defined by the
+camera, the point, and the origin.
 

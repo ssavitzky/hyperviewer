@@ -12,6 +12,7 @@ var gemm = require('ndarray-gemm'); // gemm(c, a, b[, alpha, beta]) c = alpha * 
 
 /*
  * A transformStack is a list of transform matrices to be applied sequentially.
+ * It's basically a cache for the intermediate matrices in the composition.
  *
  * Since matrix multiplication requires an empty matrix as a destination, we
  * also define a parallel list of scratch matrices.  The last of the scratch
@@ -82,9 +83,10 @@ export class transformStack {
     /*
      * Return the composition of all the transforms in the stack
      */
-    getTransform() {
+    getComposed() {
 	if (this.modifiedFrom < this.nTransforms) {
 	    this.composeFrom(this.modifiedFrom);
+	    this.modifiedFrom = this.nTransforms;
 	}
 	return this.temps[-1];
     }
@@ -93,10 +95,19 @@ export class transformStack {
      * Modify transform n.  This returns transform [n] and remembers
      *   the minimum n so that composed can recompute the composite transform.
      */
-    modifyTransform(n) {
+    getTransform(n) {
+	return this.stack[n];
+    }
+    /*
+     * Modify transform n.  
+     *   This applies a function to transform [n] and remembers the
+     *   minimum n so that composed can recompute the composite transform.
+     */
+    modifyTransform(n, modify) {
 	if (n > this.modifiedFrom) {
 	    this.modifiedFrom = n;
 	}
-	return this.temps[n];
+	this.stack[n] = modify(this.stack[n]);
+	return this;
     }
 }

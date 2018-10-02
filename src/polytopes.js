@@ -1,4 +1,4 @@
-import {sqrt} from 'math';
+import {sqrt, tan, sin} from 'math';
 import {map} from './transforms';
 var ndarray = require("ndarray");  // can't use import here.  JS is weird.
 
@@ -28,7 +28,8 @@ export class polytope {
 	this.vertices = [];
 	this.edges = [];
 	this.faces = [];
-	this.transformed = [];	// transformed vertices.
+	this.transformed = [];	// transformed vertices (temporary)
+	this.screenPoints = [];
 	return this;
     }
 
@@ -42,6 +43,32 @@ export class polytope {
      */
     applyTransform(transform) {
 	this.transformed = map(this.transformed, transform, this.vertices);
+    }
+
+    /*
+     * Apply a perspective transform for viewingAngle and screenSize. 
+     *   return the list of [x, y] screen coordinates for the vertices.
+     *
+     *   See notes for the derivation.
+     */
+    applyPerspective(viewingAngle, screenSize) {
+	let Q = screenSize/2;
+	let A = viewingAngle/2;
+	let r = Q * tan(A);
+	let p = 1/sin(A);
+	for (let n = 0; n < this.vertices; ++n) {
+	    let x = this.transformed[n].get(0);
+	    let y = this.transformed[n].get(1);
+	    let z = this.transformed[n].get(2); // TODO: Revisit this.
+	    let X = Q + r * x / (z + p);
+	    let Y = Q - r * y / (z + p); // y = 0 is at the top
+	    if (this.screenPoints.length < n+1) {
+		this.screenPoints.push([X, Y]);
+	    } else {
+		this.screenPoints[n][0] = X;
+		this.screenPoints[n][1] = Y;
+	    }
+	}
     }
 }
 

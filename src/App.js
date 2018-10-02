@@ -12,6 +12,12 @@ class App extends Component {
     constructor(props) {
 	super(props);
 	let dim = dimensions;	// This all belongs in the state.
+	this.state = {
+	    dimensions: dim,
+	    figure: figures[1],
+	    transforms: new transformStack(dim),
+	    viewerSize: 500
+	}
 	this.dimension = dim;
 	this.figure = figures[1];
 	this.transforms = new transformStack(dim);
@@ -33,6 +39,12 @@ class App extends Component {
   }
 }
 
+class AppState {
+    constructor(dim) {
+
+    }
+}
+
 function Viewer(props) {
     let size = props.size;
     let fig = props.figure;
@@ -40,7 +52,7 @@ function Viewer(props) {
 
     return (
 	<svg width={size} height={size} >
-	  <Line from={[0, 0]} to={[size-1, size-1]}/>
+	  <Line from={[0, 0]} to={[size/2, size/2]}/>
 
 	</svg>
 
@@ -54,7 +66,7 @@ function Line(props) {
 	      x2={props.to[0]} y2={props.to[1]} 
 	      stroke='green' strokeWidth='2'
 	      />
-    )
+    );
 }
 
 export default App;
