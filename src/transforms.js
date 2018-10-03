@@ -46,6 +46,7 @@ export function identity(dest) {
  */
 export function rotation(dest, x1, x2, theta) {
     fill(dest, (i, j) => rotationFill(i, j, x1, x2, sin(theta), cos(theta)));
+    return dest;
 }
 
 /*

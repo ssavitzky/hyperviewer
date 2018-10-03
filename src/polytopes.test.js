@@ -26,29 +26,36 @@ it('makes cubes with the right number of vertices and edges', () => {
 	expect(theCube.dimension).toBe(dim);
 	expect(theCube.nVertices).toBe(1<<dim);
 	expect(theCube.vertices.length).toBe(1 << dim);
+	expect(theCube.edges.length).toBe(theCube.nEdges);
     }
 });
 
 it('makes kites with the right number of vertices and edges', () => {
-    for (let dim = 2; dim < 5; ++dim) {
+    for (let dim = 3; dim < 5; ++dim) {
 	let theKite = new kite(dim);
 	expect(theKite.dimension).toBe(dim);
 	expect(theKite.nVertices).toBe(2 * dim);
 	expect(theKite.vertices.length).toBe(theKite.nVertices);
+	
+	
+	expect(theKite.nEdges).toBe(2 * dim * (dim - 1));
+	expect(theKite.edges.length).toBe(theKite.nEdges);
     }
 });
 
 it('makes simplices with the right number of vertices and edges', () => {
-    for (let dim = 2; dim < 5; ++dim) {
+    for (let dim = 2; dim < 6; ++dim) {
 	let theSimplex = new simplex(dim);
 	expect(theSimplex.dimension).toBe(dim);
 	expect(theSimplex.nVertices).toBe(1 + dim);
+	expect(theSimplex.nEdges).toBe((dim + 1) * dim / 2);
 	expect(theSimplex.vertices.length).toBe(theSimplex.nVertices);
+	expect(theSimplex.edges.length).toBe(theSimplex.nEdges);
     }
 });
 
 it('puts vertices on the unit sphere', () => {
-    for (let dim = 2; dim < 5; ++dim) {
+    for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
 	let theKite = new kite(dim);
 	let theSimplex = new simplex(dim);

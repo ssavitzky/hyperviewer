@@ -65,7 +65,14 @@ Alternatively, and much simpler, one could control the view with the viewing
 angle (2A, because this is only one side).  That would make p = 1/sin(A) =
 sec(A), and q = cot(A).  Then Q/q = Q tan(A).
 
-Now, let's consider the multidimensional case.  The line pq connects the
-point with the camera; the triangle in question is in the plane defined by the
-camera, the point, and the origin.
+Now, let's consider the multidimensional case.  There are a couple of
+possibilities:
+
+* The line pq connects the point with the camera; the triangle in question is
+  in the plane defined by the camera, the point, and the origin.  That gets
+  tricky because so far we haven't assigned the camera a location.  Putting it
+  along the [0,0,-1,...] line probably makes the most sense.
+* We can project into 3 dimensions first, possibly using a different viewing
+  angle.  This generalize to n dimensions, and probably makes the most sense.
+  
 

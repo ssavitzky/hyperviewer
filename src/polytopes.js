@@ -40,6 +40,7 @@ export class polytope {
      *
      * The first time through, we initialize this.transformed; after that
      * we re-use it to avoid excess memory allocations.
+     * TODO:  consider whether to generate screenPoints directly
      */
     applyTransform(transform) {
 	this.transformed = map(this.transformed, transform, this.vertices);
@@ -56,12 +57,13 @@ export class polytope {
 	let A = viewingAngle/2;
 	let r = Q * tan(A);
 	let p = 1/sin(A);
-	for (let n = 0; n < this.vertices; ++n) {
+	for (let n = 0; n < this.nVertices; ++n) {
 	    let x = this.transformed[n].get(0);
 	    let y = this.transformed[n].get(1);
 	    let z = this.transformed[n].get(2); // TODO: Revisit this.
 	    let X = Q + r * x / (z + p);
 	    let Y = Q - r * y / (z + p); // y = 0 is at the top
+	    X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
 	    if (this.screenPoints.length < n+1) {
 		this.screenPoints.push([X, Y]);
 	    } else {
@@ -81,6 +83,7 @@ export class polytope {
 export class cube extends polytope {
     constructor(dim) {
 	super(dim, 1 << dim, (1 << dim) * dim / 2);
+	this.name = 'cube';
 	// We want the vertices to land on the unit (hyper)sphere
 	// so the sum of the squares of the coordinates has to be 1
 	let d = sqrt(1/dim);
@@ -94,9 +97,9 @@ export class cube extends polytope {
 	}
 	for (let i = 0; i < (1 << dim); ++i) {
 	    for (let j = 0; j < dim; ++j) {
-		if (i & (1 <<j) === 0) {
+		if ((i & (1 << j)) === 0) {
 		    this.edges.push([i, i | (1 <<j)]);
-		}
+		}		
 	    }
 	}
     }
@@ -110,33 +113,28 @@ export class cube extends polytope {
  */
 export class kite extends polytope {
     constructor(dim) {
-	super(dim, dim * 2, (2 * dim * dim) - dim);
-	// The easy thing is to do the positive vertices first
-	// which puts the vertex for axis -a at a+d+1
+	super(dim, dim * 2, 2 * dim * (dim - 1));
+	this.name = 'kite';
+	// The easy thing is to do the vertices two at a time.
 	for (let i = 0; i < dim; ++i) {
-	    let vertex=[];
+	    let v1=[];
+	    let v2=[];
 	    for (let j = 0; j < dim; ++j) {
-		vertex.push((i === j)? 1.0 : 0.0);
+		v1.push((i === j)? 1.0 : 0.0);
+		v2.push((i === j)? -1.0 : 0.0);
 	    }
-	    this.vertices.push(ndarray(vertex, [dim]));
-	}
-	for (let i = 0; i < dim; ++i) {
-	    let vertex=[];
-	    for (let j = 0; j < dim; ++j) {
-		vertex.push((i === j)? -1.0 : 0.0);
-	    }
-	    this.vertices.push(ndarray(vertex, [dim]));
+	    this.vertices.push(ndarray(v1, [dim]));
+	    this.vertices.push(ndarray(v2, [dim]));
 	}
 	// now the edges.
-	//     The vertices for axis d are at d and d+dim+1
-	for (let i = 0; i < 2 * dim - 1; i++) {
+	//     The vertices for axis d are at 2d and 2d+1
+	for (let i = 0; i < 2 * dim; i += 2) {
 	    // for each vertex except the last, 
-	    for (let j = i+1; j < 2 * dim; ++j) {
+	    for (let j = i+2; j < 2 * dim ; ++j) {
 		// connect it to all the later ones except the one on its axis
-		if (j !== i + dim + 1) {
-		    this.edges.push([i, j]);
-		}		
-	    }
+		this.edges.push([i, j]);
+		this.edges.push([i+1, j]);
+	    }		
 	}
     }
 }
@@ -149,7 +147,8 @@ export class kite extends polytope {
  */
 export class simplex extends polytope {
     constructor(dim) {
-	super(dim, dim + 1, ((dim + 1) * dim / 2));
+	super(dim, dim + 1, (dim + 1) * dim / 2);
+	this.name = 'simplex';
 	for (let i = 0; i < dim; ++i) {
 	    let vertex=[];
 	    for (let j = 0; j < dim; ++j) {
@@ -166,7 +165,7 @@ export class simplex extends polytope {
 	// now the edges.
 	for (let i = 0; i < dim + 1; i++) {
 	    // for each vertex except the last, 
-	    for (let j = i+1; j < 2 * dim; ++j) {
+	    for (let j = i+1; j < dim + 1; ++j) {
 		// connect it to all the later ones
 		this.edges.push([i, j]);
 	    }		

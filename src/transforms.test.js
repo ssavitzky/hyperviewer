@@ -34,7 +34,8 @@ function roughlyEqual(v1, v2) {
 
 it('makes a rotation matrix that works correctly', () => {
     let theTransform = makeTransform(dim);
-    rotation(theTransform, 0, 1, PI/2);
+    let t = rotation(theTransform, 0, 1, PI/2);
+    expect(t).toBe(theTransform);
     dest = apply(dest, theTransform, point);
     // a 90-degree rotation takes one axis into the other
     expect(roughlyEqual(dest.get(0),point.get(1))).toBeTrue;

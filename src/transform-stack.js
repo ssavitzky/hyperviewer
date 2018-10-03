@@ -1,12 +1,8 @@
-import {zeros} from 'zeros';
-//import {sin, cos} from 'math';
+import {identity, rotation, makeTransform} from "./transforms";
 
 // packages in the ndarray collection don't properly export functions, instead they
 // return them from require.  Internally they have different names.
-var ndarray = require("ndarray");
 var gemm = require('ndarray-gemm'); // gemm(c, a, b[, alpha, beta]) c = alpha * a * b + beta * c
-//var mvp = require("ndarray-matrix-vector-product");
-//var fill = require('ndarray-fill');
 
 /// Transform stack:
 
@@ -44,23 +40,29 @@ export class transformStack {
 	this.dim = dim;
 	this.stack = [];
 	this.temps = [];
+	this.modifiedFrom = 0;
     }
 
     nTransforms() {
-	return this.temps.length;
+	return this.stack.length;
     }
+    
     /*
-     * add a transform to the stack.
+     * add a transform to the stack.  Defaults to an identity transform.
      */
     addTransform(transform) {
+	if (transform === undefined) {
+	    transform = identity(makeTransform(this.dim));
+	}
 	this.stack.push(transform);
-	let d = this.dim;
 	if (this.nTransforms() > 0) {
-	    this.temps.push(ndarray(zeros([d, d]), [d, d]));
+	    this.temps.push(makeTransform(this.dim));
 	} else {
 	    this.temps.push(transform);
 	}
-	return this.composeFrom(this.nTransforms() - 1);
+	// note that we don't have to set modifiedFrom; before we started
+	// it was at most stack.length.
+	return this;
     }
 
     /*
@@ -76,7 +78,7 @@ export class transformStack {
 		gemm(this.temps[i], this.temps[i-1], this.stack[i]);
 	    }
 	}
-	this.modifiedFrom = this.nTransforms;
+	this.modifiedFrom = this.nTransforms();
 	return this;
     }
 
@@ -84,30 +86,69 @@ export class transformStack {
      * Return the composition of all the transforms in the stack
      */
     getComposed() {
-	if (this.modifiedFrom < this.nTransforms) {
+	if (this.modifiedFrom < this.nTransforms()) {
 	    this.composeFrom(this.modifiedFrom);
-	    this.modifiedFrom = this.nTransforms;
+	    this.modifiedFrom = this.nTransforms();
 	}
-	return this.temps[-1];
+	return this.temps[this.nTransforms() - 1];
     }
 
     /*
-     * Modify transform n.  This returns transform [n] and remembers
-     *   the minimum n so that composed can recompute the composite transform.
+     * Return transform n.  
      */
     getTransform(n) {
 	return this.stack[n];
     }
+    
     /*
      * Modify transform n.  
      *   This applies a function to transform [n] and remembers the
      *   minimum n so that composed can recompute the composite transform.
+     *   Adds identity transforms if n is >= the current size of the stack.
      */
     modifyTransform(n, modify) {
-	if (n > this.modifiedFrom) {
+	for (let i = this.nTransforms(); i < n + 1; ++i) {
+	    this.addTransform();
+	}
+	if (n < this.modifiedFrom) {
 	    this.modifiedFrom = n;
 	}
 	this.stack[n] = modify(this.stack[n]);
 	return this;
+    }
+
+    /*
+     * setRotation
+     */
+    setRotation(n, x1, x2, theta) {
+	return this.modifyTransform(n, (transform) => {
+	    return rotation(transform, x1, x2, theta);
+	});
+    }
+}
+
+/*
+ * We initialize and control a transformStack with a list of rotationStates.
+ * rotationStates probably ought to include start time so that they don't depend on uniform ticks.
+ */
+export class rotationState {
+    constructor(index, axis1, axis2, angle, delta) {
+	this.index = index;
+	this.axis1 = axis1;
+	this.axis2 = axis2;
+	this.angle = angle;
+	this.delta = delta;
+    }
+
+    applyTo(transformStack) {
+	transformStack.setRotation(this.index, this.axis1, this.axis2, this.angle);
+    }
+
+    /*
+     * add delta to angle; return true if delta is non-zero
+     */
+    tick() {
+	this.angle += this.delta;
+	return(this.delta !== 0);
     }
 }
