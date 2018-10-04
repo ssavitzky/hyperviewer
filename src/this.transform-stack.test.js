@@ -43,6 +43,20 @@ it('can addTransform() correctly twice', () => {
     expect(isIdentity(dim, comp)).toBeTrue;
 });
 
+
+it('can modifyTransform', () => {
+    let theStack = new transformStack(dim);
+    let s = theStack.setRotation(0, 0, 1, PI/2);
+    expect(s.nTransforms()).toBe(1);
+    s = s.setRotation(0, 0, 1, -PI/2);
+    expect(s.nTransforms()).toBe(1);
+    expect(s.modifiedFrom).toBe(0);
+    s = s.setRotation(1, 0, 1, PI/2);
+    expect(s.nTransforms()).toBe(2);
+    s = s.setRotation(1, 0, 1, -PI/2);
+    expect(s.modifiedFrom).toBe(0);
+});
+
 it('can setRotation', () => {
     let theStack = new transformStack(dim);
     let s = theStack.setRotation(0, 0, 1, PI/2);
