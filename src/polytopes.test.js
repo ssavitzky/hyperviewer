@@ -8,14 +8,14 @@ it('has typed arrays', () => {
 
 // floating point equality is approximate
 function roughlyEqual(v1, v2) {
-    return (v1 - v2)**2 < 1e-8;
+    return (v1 - v2)**2 < 1e-10;
 }
 
-// test whether a vector is on the unit sphere
-function onUnitSphere(vector) {
+// test whether a vertex is on the unit sphere
+function onUnitSphere(vertex) {
     norm = 0.0;
-    for (let j = 0; j < vector.size; j++) {
-	norm += vector.get(j) ** 2;
+    for (let j = 0; j < vertex.size; j++) {
+	norm += vertex.get(j) ** 2;
     }
     return roughlyEqual(norm, 1);
 } 
@@ -31,13 +31,11 @@ it('makes cubes with the right number of vertices and edges', () => {
 });
 
 it('makes kites with the right number of vertices and edges', () => {
-    for (let dim = 3; dim < 5; ++dim) {
+    for (let dim = 3; dim < 6; ++dim) {
 	let theKite = new kite(dim);
 	expect(theKite.dimension).toBe(dim);
 	expect(theKite.nVertices).toBe(2 * dim);
 	expect(theKite.vertices.length).toBe(theKite.nVertices);
-	
-	
 	expect(theKite.nEdges).toBe(2 * dim * (dim - 1));
 	expect(theKite.edges.length).toBe(theKite.nEdges);
     }
