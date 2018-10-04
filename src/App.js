@@ -28,30 +28,49 @@ class App extends Component {
 	    figureIndex: defaultFigure,
 	    figure: makeFigure(dim, defaultFigure),
 	    viewerSize: 500,
-	    viewAngle: 20*DEGREES,
+	    viewAngle: 60*DEGREES,
 	    rotationStates: [],
 	};
 	/* A transformStack is basically just a way of memoizing the transform function */
 	this.transforms = new transformStack(dim);
 
-	this.state.rotationStates.push(new rotationState(0, 0, 2, 30*DEGREES, 2*DEGREES));
-	this.state.rotationStates.push(new rotationState(1, 1, 3, 20*DEGREES, 2*DEGREES));
-	this.state.rotationStates.push(new rotationState(2, 0, 3, 20*DEGREES, 2*DEGREES));
+	this.state.rotationStates.push(new rotationState(0, 0, 2, 30*DEGREES, 1*DEGREES));
+	this.state.rotationStates.push(new rotationState(1, 1, 3, 20*DEGREES, 1*DEGREES));
+	this.state.rotationStates.push(new rotationState(2, 0, 3, 20*DEGREES, 1*DEGREES));
+    }
+
+    
+    componentDidMount() {
+	this.timeID = setInterval( () => this.handleTimer(), 100 )
+    }
+
+    componentWillUnmount() {
+	clearInterval(this.timerID)
+    }
+
+    handleTimer() {
+	this.setState(this.updateRotations)
+    }
+
+    /* State updaters */
+
+    updateRotations( oldstate, props) {
+	let newstate = {...oldstate};
+	newstate.rotationStates = oldstate.rotationStates.map((state) => state.tick())
+	return newstate;
+    }
+    
+    updateDimensions(oldstate, props) {
+	let newState = {...oldstate};
+    }
+    
+    render() {
 	for (let r of this.state.rotationStates) {
 	    r.applyTo(this.transforms);
 	}
 	let xform = this.transforms.getComposed();
 	this.state.figure.applyTransform(xform);
 	this.state.figure.applyPerspective(this.state.viewAngle, this.state.viewerSize);
-    }
-
-    /* State updaters */
-
-    updateDimensions(oldstate, props) {
-	let newState = {...oldstate};
-    }
-    
-    render() {
 	return (
 	    <div className="App">
               <header className="App-header">
@@ -84,7 +103,8 @@ function Viewer(props) {
 	<svg width={size} height={size} >
 	  {
 	      fig.edges.map((edge, n) => {
-		  return <Edge key={n.toString()} from={verts[edge[0]]} to={verts[edge[1]]} />;
+		  let key = n.toString() + ':[' + edge[0].toString() + ',' + edge[1].toString() + ']';
+		  return <Edge key={key} from={verts[edge[0]]} to={verts[edge[1]]} />;
 	      })
 	  }
 	</svg>

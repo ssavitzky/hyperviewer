@@ -55,7 +55,7 @@ export class polytope {
     applyPerspective(viewingAngle, screenSize) {
 	let Q = screenSize/2;
 	let A = viewingAngle/2;
-	let r = Q * tan(A);
+	let r = Q / tan(A);
 	let p = 1/sin(A);
 	for (let n = 0; n < this.nVertices; ++n) {
 	    let x = this.transformed[n].get(0);
@@ -63,7 +63,7 @@ export class polytope {
 	    let z = this.transformed[n].get(2); // TODO: Revisit this.
 	    let X = Q + r * x / (z + p);
 	    let Y = Q - r * y / (z + p); // y = 0 is at the top
-	    X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
+	    //X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
 	    if (this.screenPoints.length < n+1) {
 		this.screenPoints.push([X, Y]);
 	    } else {

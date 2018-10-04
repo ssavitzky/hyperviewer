@@ -145,10 +145,14 @@ export class rotationState {
     }
 
     /*
-     * add delta to angle; return true if delta is non-zero
+     * add delta to angle; return this if unchanged, new state if updated
      */
     tick() {
-	this.angle += this.delta;
-	return(this.delta !== 0);
+	if (this.delta === 0) {
+	    return this;
+	}
+	return new rotationState(this.index,
+				 this.axis1, this.axis2,
+				 this.angle+this.delta, this.delta);
     }
 }
