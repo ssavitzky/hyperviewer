@@ -50,25 +50,28 @@ export class polytope {
      * Apply a perspective transform for viewingAngle and screenSize. 
      *   return the list of [x, y] screen coordinates for the vertices.
      *
-     *   See notes for the derivation.
+     *   See notes for the derivation.  We assume the same viewing angle
+     *   for all projections.
      */
     applyPerspective(viewingAngle, screenSize) {
 	let Q = screenSize/2;
 	let A = viewingAngle/2;
-	let r = Q / tan(A);
+	let r = 1 / tan(A);
 	let p = 1/sin(A);
 	for (let n = 0; n < this.nVertices; ++n) {
-	    let x = this.transformed[n].get(0);
-	    let y = this.transformed[n].get(1);
-	    let z = this.transformed[n].get(2); // TODO: Revisit this.
-	    let X = Q + r * x / (z + p);
-	    let Y = Q - r * y / (z + p); // y = 0 is at the top
+	    let X = this.transformed[n].get(0);
+	    let Y = this.transformed[n].get(1);
+	    for (let i = 2; i < this.dimension; ++i) {
+		let z = this.transformed[n].get(i);
+		X = r * X / (z + p);
+		Y = r * Y / (z + p); // y = 0 is at the top
+	    }
 	    //X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
 	    if (this.screenPoints.length < n+1) {
-		this.screenPoints.push([X, Y]);
+		this.screenPoints.push([Q + Q * X, Q - Q * Y]);
 	    } else {
-		this.screenPoints[n][0] = X;
-		this.screenPoints[n][1] = Y;
+		this.screenPoints[n][0] = Q + Q * X;
+		this.screenPoints[n][1] = Q - Q * Y;
 	    }
 	}
     }
