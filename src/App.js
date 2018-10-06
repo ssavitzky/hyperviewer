@@ -7,7 +7,7 @@ import './transforms';
 import './App.css';
 
 var defaultDimensions = 4;
-var defaultFigure = 0;
+var defaultFigure = 2;
 
 function makeFigure(dimensions, index) {
     let makers = [ (dim) => new simplex(dim),
@@ -70,7 +70,7 @@ class App extends Component {
     handleDimensionChange = (event) => this.updateDimensions(event.target.value);
 
     updateFigure(index) {
-	if (index < 0 || index >= 2) {
+	if (index < 0 || index > 2) {
 	    return;
 	}
 	this.setState((oldstate, props) => {
