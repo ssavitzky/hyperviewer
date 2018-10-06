@@ -74,5 +74,8 @@ possibilities:
   along the [0,0,-1,...] line probably makes the most sense.
 * We can project into 3 dimensions first, possibly using a different viewing
   angle.  This generalize to n dimensions, and probably makes the most sense.
-  
+  I think this amounts to multiplying the corrections for the different axes,
+  so it's symmetrical.
+* We can fall back on doing it with homogeneous coordinates (which has its own
+  problems, but is probably the most correct).
 

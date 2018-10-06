@@ -1,5 +1,4 @@
-import {sqrt, tan, sin} from 'math';
-import {map} from './transforms';
+import {sqrt} from 'math';
 var ndarray = require("ndarray");  // can't use import here.  JS is weird.
 
 /*
@@ -31,49 +30,6 @@ export class polytope {
 	this.transformed = [];	// transformed vertices (temporary)
 	this.screenPoints = [];
 	return this;
-    }
-
-    /*
-     * Apply a linear transform, which is a [dim, dim] ndarray, to all
-     * the vertices of the polytope.  The results are in the parallel
-     * list this.transformed.
-     *
-     * The first time through, we initialize this.transformed; after that
-     * we re-use it to avoid excess memory allocations.
-     * TODO:  consider whether to generate screenPoints directly
-     */
-    applyTransform(transform) {
-	this.transformed = map(this.transformed, transform, this.vertices);
-    }
-
-    /*
-     * Apply a perspective transform for viewingAngle and screenSize. 
-     *   return the list of [x, y] screen coordinates for the vertices.
-     *
-     *   See notes for the derivation.  We assume the same viewing angle
-     *   for all projections.
-     */
-    applyPerspective(viewingAngle, screenSize) {
-	let Q = screenSize/2;
-	let A = viewingAngle/2;
-	let r = 1 / tan(A);
-	let p = 1/sin(A);
-	for (let n = 0; n < this.nVertices; ++n) {
-	    let X = this.transformed[n].get(0);
-	    let Y = this.transformed[n].get(1);
-	    for (let i = 2; i < this.dimension; ++i) {
-		let z = this.transformed[n].get(i);
-		X = r * X / (z + p);
-		Y = r * Y / (z + p); // y = 0 is at the top
-	    }
-	    //X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
-	    if (this.screenPoints.length < n+1) {
-		this.screenPoints.push([Q + Q * X, Q - Q * Y]);
-	    } else {
-		this.screenPoints[n][0] = Q + Q * X;
-		this.screenPoints[n][1] = Q - Q * Y;
-	    }
-	}
     }
 }
 

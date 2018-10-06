@@ -7,12 +7,12 @@ import './transforms';
 import './App.css';
 
 var defaultDimensions = 4;
-var defaultFigure = 1;
+var defaultFigure = 0;
 
 function makeFigure(dimensions, index) {
-    let makers = [ (dim) => new kite(dim),
+    let makers = [ (dim) => new simplex(dim),
+		   (dim) => new kite(dim),
 		   (dim) => new cube(dim),
-		   (dim) => new simplex(dim)
 		 ];
     return makers[index](dimensions);
 }
@@ -22,94 +22,125 @@ const DEGREES = PI/180;
 class App extends Component {
     constructor(props) {
 	super(props);
-	let dim = defaultDimensions;	// This all belongs in the state.
-	this.state = {
-	    dimensions: dim,
-	    figureIndex: defaultFigure,
-	    figure: makeFigure(dim, defaultFigure),
-	    viewerSize: 500,
-	    viewAngle: 60*DEGREES,
-	    rotationStates: [],
-	};
-	/* A transformStack is basically just a way of memoizing the transform function */
-	this.transforms = new transformStack(dim);
-
-	this.state.rotationStates.push(new rotationState(0, 0, 2, 30*DEGREES, 1*DEGREES));
-	this.state.rotationStates.push(new rotationState(1, 1, 3, 20*DEGREES, 1*DEGREES));
-	this.state.rotationStates.push(new rotationState(2, 0, 3, 20*DEGREES, 1*DEGREES));
+	let rotationStates = [];
+	rotationStates.push(new rotationState(0, 0, 1, 30*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(0, 0, 2, 30*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(1, 1, 3, 20*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(2, 0, 3, 20*DEGREES, 1*DEGREES));
+	this.state = setDimensions(defaultDimensions,
+				    {
+					figureIndex: defaultFigure,
+					viewerSize: 500,
+					viewAngle: 60*DEGREES,
+					rotationStates: rotationStates,
+					cycles: 0,
+				    });
     }
-
     
     componentDidMount() {
-	this.timeID = setInterval( () => this.handleTimer(), 100 )
+	this.timeID = setInterval( () => this.handleTimer(), 100 );
     }
 
     componentWillUnmount() {
-	clearInterval(this.timerID)
+	clearInterval(this.timerID);
     }
 
     handleTimer() {
-	this.setState(this.updateRotations)
+	this.setState(this.rotate);
     }
 
     /* State updaters */
 
-    updateRotations( oldstate, props) {
+    rotate(oldstate, props) {
 	let newstate = {...oldstate};
-	newstate.rotationStates = oldstate.rotationStates.map((state) => state.tick())
+	newstate.rotationStates = oldstate.rotationStates.map((state) => state.tick());
+	++ newstate.cycles;
+	for (let r of oldstate.rotationStates) {
+	    r.applyTo(newstate.transforms);
+	}
 	return newstate;
     }
     
-    updateDimensions(oldstate, props) {
-	let newState = {...oldstate};
+    updateDimensions(dim) {
+	this.setState((oldstate, props) => {
+	    return setDimensions(dim, oldstate);
+	});
     }
+
+    handleDimensionChange = (event) => this.updateDimensions(event.target.value);
+
+    updateFigure(index) {
+	if (index < 0 || index >= 2) {
+	    return;
+	}
+	this.setState((oldstate, props) => {
+	    let newState = {...oldstate};
+	    newState.figureIndex = index;
+	    newState.figure = makeFigure(oldstate.dimensions, newState.figureIndex);
+	    return newState;
+	});
+    }
+    handleFigureChange = (event) => this.updateFigure(event.target.value);
     
     render() {
-	for (let r of this.state.rotationStates) {
-	    r.applyTo(this.transforms);
-	}
-	let xform = this.transforms.getComposed();
-	this.state.figure.applyTransform(xform);
-	this.state.figure.applyPerspective(this.state.viewAngle, this.state.viewerSize);
+	let state=(this.state);
 	return (
 	    <div className="App">
               <header className="App-header">
 		<h3>{`Welcome to Hyperspace Express viewer, Inferno version ${version}`}</h3>
               </header>
-	      { "showing a " + this.state.dimensions.toString() + "-dimensional " + this.state.figure.name }
+	      { "showing a " + state.dimensions.toString() + "-dimensional "
+	      + state.figure.name }
 	      <br/>
-	      <p> { this.state.figure.nVertices.toString() + " vertices, " }
-	      { this.state.figure.transformed.length.toString() + " transformed, " }
-	      { this.state.figure.screenPoints.length.toString() + " screen, " }
-	      { this.state.figure.nEdges.toString() + " edges, " }
-	      { this.state.figure.edges.length.toString() + " screen, " } </p>
-	      <Viewer viewSize={this.state.viewerSize} viewAngle={this.cameraAngle}
-		      figure={this.state.figure} transform={this.transforms.getComposed()} />
+	      <SelectDimensions value={state.dimensions} min="2" max="6"
+				callback={this.handleDimensionChange}
+				/>
+	      <SelectFigure value={state.figureIndex} min="0" max="2"
+		       callback={this.handleFigureChange}/>
+	      <p>
+		{ String(state.figure.nVertices) + " vertices, " }
+		{ state.figure.nEdges.toString() + " edges, " }
+		{ state.figure.edges.length.toString() + " screen, " }
+		{ state.cycles + " cycles, " }
+	      </p>
+	      <Viewer viewSize={state.viewerSize} viewAngle={this.cameraAngle}
+		      figure={state.figure} transforms={state.transforms} />
 	    </div>
     );
   }
 }
 
-function showEdge(edge) {
-    
+/// State Transformer Functions
+
+function  setDimensions(dimensions, oldstate) {
+    let state = {...oldstate};
+    state.dimensions = dimensions;
+    state.figureIndex = oldstate.figureIndex;
+    state.figure = makeFigure(dimensions, state.figureIndex);
+    state.transforms = new transformStack(dimensions);
+	for (let r of state.rotationStates) {
+	    r.applyTo(state.transforms);
+	}
+    return state;
 }
+
+/// Component functions:
 
 function Viewer(props) {
     let size = props.viewSize;
     let fig = props.figure;
-    let verts = fig.screenPoints;
-
+    let transformed = props.transforms.transformPoints(fig.vertices);
+    let verts = props.transforms.getScreenPoints(transformed, props.viewAngle, size);
     return (
-	<svg width={size} height={size} >
+	<svg width={size} height={size} key={"" + fig.dimension + fig.name } >
 	  {
 	      fig.edges.map((edge, n) => {
-		  let key = n.toString() + ':[' + edge[0].toString() + ',' + edge[1].toString() + ']';
+		  let key = String(n) + ':[' + edge[0] + ',' + edge[1] + ']';
 		  return <Edge key={key} from={verts[edge[0]]} to={verts[edge[1]]} />;
 	      })
 	  }
 	</svg>
     );
-
 }
 
 function Edge(props) {
@@ -119,6 +150,22 @@ function Edge(props) {
 	      key={props.key}
 	      stroke='green' strokeWidth='2'
 	      />
+    );
+}
+
+function SelectDimensions(props) {
+    return (
+	<input type="range" value={props.value} min={props.min} max={props.max}
+	       onInput={props.callback}
+	       />
+    );
+}
+
+function SelectFigure(props) {
+    return (
+	<input type="range" value={props.value}  min={props.min} max={props.max}
+	       onInput={props.callback}
+	       />
     );
 }
 

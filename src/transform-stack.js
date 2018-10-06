@@ -1,3 +1,5 @@
+import {tan, sin} from 'math';
+import {map} from './transforms';
 import {identity, rotation, makeTransform} from "./transforms";
 
 // packages in the ndarray collection don't properly export functions, instead they
@@ -86,6 +88,9 @@ export class transformStack {
      * Return the composition of all the transforms in the stack
      */
     getComposed() {
+	if (this.nTransforms === 0) {
+	    this.addTransform();
+	}
 	if (this.modifiedFrom < this.nTransforms()) {
 	    this.composeFrom(this.modifiedFrom);
 	    this.modifiedFrom = this.nTransforms();
@@ -121,9 +126,68 @@ export class transformStack {
      * setRotation
      */
     setRotation(n, x1, x2, theta) {
+	if (x1 >= this.dim || x2 >= this.dim)
+	{
+	    return this;
+	}
 	return this.modifyTransform(n, (transform) => {
 	    return rotation(transform, x1, x2, theta);
 	});
+    }
+
+    getScreenPoints(vertices, viewingAngle, screenSize) {
+	//let transformed = this.transform(vertices);
+	return this.applyPerspective(viewingAngle, screenSize, vertices);
+    }
+    
+    /*
+     * Apply a linear transform, which is a [dim, dim] ndarray, to all
+     * the vertices of the polytope.  The results are in the parallel
+     * list this.transformed.
+     *
+     * The first time through, we initialize this.transformed; after that
+     * we re-use it to avoid excess memory allocations.
+     * TODO:  consider whether to generate screenPoints directly
+     */
+    transformPoints(vertices) {
+	let xform = this.nTransforms() > 0
+	    ? this.getComposed()
+	    : identity(makeTransform(this.dim));
+	this.transformed = map(this.transformed, xform, vertices);
+	return this.transformed;
+    }
+
+    /*
+     * Apply a perspective transform for viewingAngle and screenSize. 
+     *   return the list of [x, y] screen coordinates for the vertices.
+     *
+     *   See notes for the derivation.  We assume the same viewing angle
+     *   for all projections.
+     */
+    applyPerspective(viewingAngle, screenSize, transformed) {
+	let screenPoints = [];
+	let nVertices = transformed.length;
+	let Q = screenSize/2;
+	let A = viewingAngle/2;
+	let r = 1 / tan(A);
+	let p = 1/sin(A);
+	for (let n = 0; n < nVertices; ++n) {
+	    let X = transformed[n].get(0);
+	    let Y = transformed[n].get(1);
+	    for (let i = 2; i < this.dimension; ++i) {
+		let z = transformed[n].get(i);
+		X = r * X / (z + p);
+		Y = r * Y / (z + p); // y = 0 is at the top
+	    }
+	    //X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
+	    if (screenPoints.length < n+1) {
+		screenPoints.push([Q + Q * X, Q - Q * Y]);
+	    } else {
+		screenPoints[n][0] = Q + Q * X;
+		screenPoints[n][1] = Q - Q * Y;
+	    }
+	}
+	return screenPoints;
     }
 }
 
