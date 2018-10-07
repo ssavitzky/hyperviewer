@@ -1,5 +1,5 @@
 import {sqrt} from 'math';
-var ndarray = require("ndarray");  // can't use import here.  JS is weird.
+import {makePoint} from './transforms';
 
 /*
  * This package lets us create and transform n-dimensional polytopes.
@@ -7,7 +7,7 @@ var ndarray = require("ndarray");  // can't use import here.  JS is weird.
 
 /* 
  * Polytope.  
- *   .vertices is the list of vertices, in the form of n*1 ndarrays.
+ *   .vertices is the list of vertices, in the form of vectors.
  *   .edges is a list of pairs of vertex indices.
  *   .faces is a list of lists of vertices (not of edges), and is optional
  *          in case we want to color some of the faces.  (On the other hand
@@ -27,8 +27,6 @@ export class polytope {
 	this.vertices = [];
 	this.edges = [];
 	this.faces = [];
-	this.transformed = [];	// transformed vertices (temporary)
-	this.screenPoints = [];
 	return this;
     }
 }
@@ -52,7 +50,7 @@ export class cube extends polytope {
 		// positive if i has a 1 bit in the jth position
 		vertex[j] = ((i & (1<<j)? d : -d));
 	    }
-	    this.vertices.push(ndarray(vertex, [dim]));
+	    this.vertices.push(makePoint(dim, vertex));
 	}
 	for (let i = 0; i < (1 << dim); ++i) {
 	    for (let j = 0; j < dim; ++j) {
@@ -82,8 +80,8 @@ export class kite extends polytope {
 		v1.push((i === j)? 1.0 : 0.0);
 		v2.push((i === j)? -1.0 : 0.0);
 	    }
-	    this.vertices.push(ndarray(v1, [dim]));
-	    this.vertices.push(ndarray(v2, [dim]));
+	    this.vertices.push(makePoint(dim, v1));
+	    this.vertices.push(makePoint(dim, v2));
 	}
 	// now the edges.
 	//     The vertices for axis d are at 2d and 2d+1
@@ -113,14 +111,14 @@ export class simplex extends polytope {
 	    for (let j = 0; j < dim; ++j) {
 		vertex.push((i === j)? 1.0 : 0.0);
 	    }
-	    this.vertices.push(ndarray(vertex, [dim]));
+	    this.vertices.push(makePoint(dim, vertex));
 	}
-	let x = sqrt(1.0/dim);
+	let x = - sqrt(1.0/dim);
 	let vertex=[];
 	for (let i = 0; i < dim; ++i) {
 	    vertex.push(x);
 	}
-	this.vertices.push(ndarray(vertex, [dim]));
+	this.vertices.push(makePoint(dim, vertex));
 	// now the edges.
 	for (let i = 0; i < dim + 1; i++) {
 	    // for each vertex except the last, 
