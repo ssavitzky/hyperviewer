@@ -1,10 +1,6 @@
-import {tan, sin} from 'math';
+import {tan, sin, PI} from 'math';
 import {map} from './transforms';
-import {identity, rotation, makeTransform} from "./transforms";
-
-// packages in the ndarray collection don't properly export functions, instead they
-// return them from require.  Internally they have different names.
-var gemm = require('ndarray-gemm'); // gemm(c, a, b[, alpha, beta]) c = alpha * a * b + beta * c
+import {identity, rotation, makeTransform, gemm} from "./transforms";
 
 /// Transform stack:
 
@@ -215,8 +211,12 @@ export class rotationState {
 	if (this.delta === 0) {
 	    return this;
 	}
+	let angle = this.angle+this.delta;
+	if (angle >= PI * 2) {
+	    angle -= PI *2;
+	}
 	return new rotationState(this.index,
 				 this.axis1, this.axis2,
-				 this.angle+this.delta, this.delta);
+				 angle, this.delta);
     }
 }

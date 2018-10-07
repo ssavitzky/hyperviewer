@@ -1,21 +1,129 @@
 import {sin, cos} from 'math';
 
-// packages in the ndarray collection don't properly export functions, instead they
-// return them from require.  Internally they have different names.
-var ndarray = require("ndarray");
-var gemm = require('ndarray-gemm'); // gemm(c, a, b[, alpha, beta]) c = alpha * a * b + beta * c
-var mvp = require("ndarray-matrix-vector-product");
-var fill = require('ndarray-fill');
-
 /*
  * This package creates, composes, and applies linear transforms.
  */
 
-export function makeTransform(dim) {
-    return ndarray(new Float64Array(dim * dim), [dim, dim]);
+/*
+ * matrix(rows, cols) constructs a rows * cols matrix.
+ */
+export class matrix {
+    constructor(rows, cols) {
+	this.shape = [rows, cols];
+	this.nRows = rows;
+	this.nColumns = cols;
+	this.rows = [];		// each row is a Float64Array of column values
+	for (let i = 0; i < this.nRows; ++i) {
+	    this.rows.push(new Float64Array(this.nColumns));
+	}
+    }
+
+    fill(f) {
+	for (let r = 0; r < this.nRows; ++r) {
+	    for (let c = 0; c < this.nColumns; ++c) {
+		this.rows[r][c] = f(r, c);
+	    }
+	}
+	return this;		
+    }
+
+    get(r, c) {
+	return this.rows[r][c];
+    }
+
+    toString() {
+	let shape = this.shape;
+	let s = "[";
+	for (let x = 0; x  < shape[0]; ++x) {
+	    s += "[";
+	    for (let y = 0; y < shape[1]; ++y) {
+		s += String(this.get(x, y));
+		s += (y === shape[1] - 1)? "" : ", ";
+	    }
+	    s += "]";
+	}
+	s += "]";
+	return s;
+    }
+
+    /*
+     * Multiply A=this (on the left) with B (on the right) and put the result in dest.
+     *
+     * Multiplication of two matrices is defined if and only if the
+     * number of columns of the left matrix is the same as the number
+     * of rows of the right matrix.
+     */
+    compose(right, dest) {
+	/* 
+	 * If A is an m-by-n matrix and B is an n-by-p matrix, then
+	 * their matrix product AB is the m-by-p matrix whose entries
+	 * are given by dot product of the corresponding row of A and
+	 * the corresponding column of B:
+	 */
+	//assert(this.nRows === right.nColumns);
+	for (let r = 0; r < this.nRows; ++r) { // A row = destination row
+	    for (let c = 0; c < dest.nColumns; ++c) { // C column = destnation column
+		let sum = 0;
+		for (let p = 0; p < this.nColumns; ++p) {
+		    sum += this.get(r, p) * right.get(c, p);
+		}
+		dest.rows[r][c] = sum;
+	    }
+	}
+	return dest;
+    }
+
+    /*
+     * This computes the matrix product Mv, with v considered to be a
+     * column vector, and the destination considered to be a row vector.
+     */
+    transform(right, dest) {
+	// destination rows == 1
+	for (let c = 0; c < this.nColumns; ++c) { // destnation row
+	    let sum = 0;
+	    for (let p = 0; p < this.nRows; ++p) {
+		sum += this.get(c, p) * right.get(p);
+	    }
+	    dest.values[c] = sum;
+	}
+	return dest;
+    }
 }
-export function makePoint(dim) {
-    return ndarray(new Float64Array(dim), [dim]);
+
+
+/*
+ * A vector is not a matrix.
+ */
+export class vector {
+    constructor(dimensions) {
+	this.shape = [ dimensions ];
+	this.dimensions = dimensions;
+	this.size = dimensions;	      // for ndarray compatibility
+	this.values = new Float64Array(this.dimensions);
+    }
+
+    fill(f) {
+	for (let c = 0; c < this.dimensions; ++c) {
+	    this.values[c] = f(c);
+	}
+	return this;		
+    }
+    
+    get(n) {
+	return this.values[n];
+    }
+    
+}
+
+export function makeTransform(dim) {
+    return new matrix(dim, dim);
+}
+export function makePoint(dim, list) {
+    let v = new vector(dim);
+    if (list !== undefined) {
+	v.fill((i) => list[i]);
+    }
+    return v;
 }
 
 /// Identity:
@@ -24,7 +132,7 @@ export function makePoint(dim) {
  * initialize a square matrix, dest, to an identity transform.
  */
 export function identity(dest) {
-    fill(dest, (i, j) => {
+    dest.fill((i, j) => {
 	return (i === j)? 1.0 : 0.0;
     });
     return dest;
@@ -45,7 +153,7 @@ export function identity(dest) {
  * and http://www.eusebeia.dyndns.org/4d/vis/10-rot-1
  */
 export function rotation(dest, x1, x2, theta) {
-    fill(dest, (i, j) => rotationFill(i, j, x1, x2, sin(theta), cos(theta)));
+    dest.fill((i, j) => rotationFill(i, j, x1, x2, sin(theta), cos(theta)));
     return dest;
 }
 
@@ -55,7 +163,7 @@ export function rotation(dest, x1, x2, theta) {
  * sines and cosines.
  */
 export function rotation2(dest, x1, x2, sinTheta, cosTheta) {
-    fill(dest, (i, j) => rotationFill(i, j, x1, x2, sinTheta, cosTheta));
+    dest.fill((i, j) => rotationFill(i, j, x1, x2, sinTheta, cosTheta));
 }
 
 /*
@@ -75,14 +183,19 @@ function rotationFill(i, j, x1, x2, sinTheta, cosTheta) {
 	     (i === j)? 1 : 0);    
 }
 
+/// nvarray compatibility functions
+
 /// Composing transforms
 
-export function compose(dest, t1, t2) {
-    gemm(dest, t1, t2);
-    return dest;
+export function gemm(dest, t1, t2) {
+    return t1.compose(t2, dest);
 }
 
 /// Applying transforms
+
+export function fill(matrix, f) {
+    return matrix.fill(f);
+}
 
 /*
  * Transform a point
@@ -91,8 +204,7 @@ export function apply(dest, transform, point) {
     if (dest === undefined) {
 	dest = makePoint(point.size);
     }
-    mvp(dest, transform, point);
-    return dest;
+    return transform.transform(point, dest);
 }
 
 /*
@@ -109,11 +221,15 @@ export function map(dest, transform, points) {
     if (dest.length < points.length) {
 	let dim = points[0].size;
 	for (let i = dest.length; i < points.length; ++i) {
-	    dest.push(ndarray(new Float64Array(dim)));
+	    dest.push(new vector(dim));
 	}
     }
     for (let i = 0; i < points.length; ++i) {
-	mvp(dest[i], transform, points[i]);
+	transform.transform(points[i], dest[i]);
     }
     return dest;
+}
+
+export function transformToString(transform) {
+    return transform.toString();
 }

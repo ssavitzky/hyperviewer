@@ -1,13 +1,12 @@
 import {PI} from 'math';
-import {makeTransform, makePoint, compose, apply, map,
+import {makeTransform, makePoint, gemm, apply, map,
 	identity, rotation,
        } from './transforms';
 
-var ndarray = require("ndarray");
 
 var dim = 4;
-var point = ndarray([1.0, 2.0, 3.0, 4.0], [dim]);
-var point1 = ndarray([5.0, 6.0, 7.0, 8.0], [dim]);
+var point = makePoint(dim, [1.0, 2.0, 3.0, 4.0]);
+var point1 = makePoint(dim, [5.0, 6.0, 7.0, 8.0]);
 var dest = makePoint(dim);
 
 it('makes an identity matrix that works correctly', () => {
@@ -49,7 +48,7 @@ it('composes rotations correctly', () => {
     let theTransform = makeTransform(dim);
     rotation(theTransform, 0, 1, PI/4);
     let composedWithItself = makeTransform(dim);
-    compose(composedWithItself, theTransform, theTransform);
+    gemm(composedWithItself, theTransform, theTransform);
     dest = apply(dest, composedWithItself, point);
     // a 90-degree rotation takes one axis into the other
     expect(roughlyEqual(dest.get(0),point.get(1))).toBeTrue;
