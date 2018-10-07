@@ -1,28 +1,39 @@
 import { version, Component } from 'inferno';
 import './registerServiceWorker';
 import {PI} from 'math';
-import {cube, kite, simplex} from './polytopes';
+import {polytopeFactory} from './polytopes';
 import {transformStack, rotationState} from './transform-stack';
 import './App.css';
 
-var defaultDimensions = 4;
-var defaultFigure = 2;
-
-function makeFigure(dimensions, index) {
-    let makers = [ (dim) => new simplex(dim),
-		   (dim) => new kite(dim),
-		   (dim) => new cube(dim),
-		 ];
-    return makers[index](dimensions);
-}
+var defaultDimensions = 3;
+var defaultFigure = 1;
 
 const DEGREES = PI/180;
+const MAX_DIM = 6;
+const MIN_DIM = 2;
+
+/*
+ * NOTE:  something goes weirdly wrong the second time we try to make a simplex
+ *        _while the app is running_ -- nVertices and nEdges are wrong, and go
+ *        wrong _while we are making the vertices_!.  I suspect that something
+ *        isn't thread-safe, but it could also be due to our cavalier attitude
+ *        toward rotations.
+ *        Our hacky solution is simply to cache all the polytopes we're going to
+ *        need, so that we don't have to do it twice.
+ */
+const polytopeFactories = [];
+for (let n = MIN_DIM; n <= MAX_DIM; n++) {
+    polytopeFactories.push(new polytopeFactory(n));
+}
 
 class App extends Component {
     constructor(props) {
 	super(props);
 	let dimensions = defaultDimensions;
 	let rotationStates = [];
+	/* 
+	 * For now we just make a couple of random rotation states; 
+	 */
 	rotationStates.push(new rotationState(0, 0, 1, 30*DEGREES, 1*DEGREES));
 	rotationStates.push(new rotationState(1, 0, 2, 30*DEGREES, 1*DEGREES));
 	rotationStates.push(new rotationState(2, 1, 3, 20*DEGREES, 1*DEGREES));
@@ -35,7 +46,9 @@ class App extends Component {
 	    rotationStates: rotationStates,
 	    cycles: 0,
 	};
-	state.figure = makeFigure(dimensions, state.figureIndex);
+	state.dimensions = dimensions;
+	state.polytopeFactory = polytopeFactories[dimensions - MIN_DIM];
+	state.figure = state.polytopeFactory.getPolytope(state.figureIndex);
 	state.transforms = new transformStack(dimensions);
 	for (let r of state.rotationStates) {
 	    r.applyTo(state.transforms);
@@ -69,10 +82,24 @@ class App extends Component {
 	newstate.transform = newstate.transforms.getComposed();
 	return newstate;
     }
-    
+
+    setDimensions(dimensions, oldstate) {
+	let state = {...oldstate};
+	state.dimensions = dimensions;
+	state.polytopeFactory = polytopeFactories[dimensions - MIN_DIM];
+	state.figureIndex = oldstate.figureIndex;
+	state.figure = state.polytopeFactory.getPolytope(state.figureIndex);
+	state.transforms = new transformStack(dimensions);
+	for (let r of state.rotationStates) {
+	    r.applyTo(state.transforms);
+	}
+	state.transform = state.transforms.getComposed();
+	return state;
+    }
+
     updateDimensions(dim) {
 	this.setState((oldstate, props) => {
-	    return setDimensions(dim, oldstate);
+	    return this.setDimensions(dim, oldstate);
 	});
     }
 
@@ -85,7 +112,7 @@ class App extends Component {
 	this.setState((oldstate, props) => {
 	    let newState = {...oldstate};
 	    newState.figureIndex = index;
-	    newState.figure = makeFigure(oldstate.dimensions, newState.figureIndex);
+	    newState.figure = oldstate.polytopeFactory.getPolytope(newState.figureIndex);
 	    return newState;
 	});
     }
@@ -104,41 +131,23 @@ class App extends Component {
 	return (
 	    <div className="App">
               <header className="App-header">
-		<h3>{`Welcome to Hyperspace Express viewer, Inferno version ${version}`}</h3>
+		<h3>{`Welcome to Hyperspace Express Viewer on Inferno version ${version}`}</h3>
               </header>
-	      "showing a " {state.dimensions.toString()} "-dimensional "
-		  { state.figure.name }
+	      this is a {state.dimensions.toString()}-dimensional { state.figure.name }
 	      <br/>
-	      <SelectDimensions value={state.dimensions} min="2" max="6"
+	      <SelectDimensions value={state.dimensions} min={MIN_DIM} max={MAX_DIM}
 				callback={this.handleDimensionChange}
 				/>
 	      <SelectFigure value={state.figureIndex} min="0" max="2"
 		       callback={this.handleFigureChange}/>
 	      <p>
 		{ String(state.figure.nVertices) + " Vertices, " }
-		{ "(screen "  + String(verts.length) + ") " }
 		{ figure.nEdges.toString() + " edges, " }
-		{ figure.edges.length.toString() + " screen, " }
 		{ state.cycles + " cycles, " }
 		{ transforms.nTransforms() + " transforms " }
-		{ transforms.modifiedFrom }
 	      </p>
-	<svg width={size} height={size}>
-	  <circle cx={size/2} cy={size/2} r={3} fill="red" />
-	  <g $HasKeyedChildren>
-	  { figure.edges.map((edge, n) => {
-	      let key = String(n) + ':[' + edge[0] + ',' + edge[1] + ']';
-	      let from = verts[edge[0]];
-	      let to = verts[edge[1]];
-	      return <line key={key} stroke='green' strokeWidth='2'
-			       x1={from[0]} y1={from[1]}
-			       x2={to[0]} y2={to[1]} />;
-	      })
-	  }
-	  </g>
-	</svg>
-	{ /* <Viewer viewSize={state.viewerSize} viewAngle={this.cameraAngle}
-		    figure={state.figure} transforms={this.transforms} />  */}
+	      <Viewer viewSize={state.viewerSize} viewAngle={state.cameraAngle}
+		      figure={state.figure} transforms={state.transforms} />
 	    </div>
     );
   }
@@ -146,34 +155,30 @@ class App extends Component {
 
 /// State Transformer Functions
 
-function  setDimensions(dimensions, oldstate) {
-    let state = {...oldstate};
-    state.dimensions = dimensions;
-    state.figureIndex = oldstate.figureIndex;
-    state.figure = makeFigure(dimensions, state.figureIndex);
-    state.transforms = new transformStack(dimensions);
-    for (let r of state.rotationStates) {
-	r.applyTo(state.transforms);
-    }
-    state.transform = state.transforms.getComposed();
-    return state;
-}
 
 /// Component functions:
 
 function Viewer(props) {
     let size = props.viewSize;
-    let fig = props.figure;
-    let transformed = props.transforms.transformPoints(fig.vertices);
+    let figure = props.figure;
+    let transformed = props.transforms.transformPoints(figure.vertices);
     let verts = props.transforms.getScreenPoints(transformed, props.viewAngle, size);
+    if (figure.edges.length > figure.nEdges) {
+	throw new Error("expect " + figure.nEdges + " but have " + figure.edges.length +
+			" in " + figure.dimension + '-D ' + figure.name
+		       );
+    }
     return (
 	<svg width={size} height={size}>
 	  <circle cx={size/2} cy={size/2} r={3} fill="red" />
 	  <g $HasKeyedChildren>
-	  { fig.edges.map((edge, n) => {
+	  { figure.edges.map((edge, n) => {
 	      let key = String(n) + ':[' + edge[0] + ',' + edge[1] + ']';
 	      let from = verts[edge[0]];
 	      let to = verts[edge[1]];
+	      if (from === undefined || to === undefined) {
+		  throw new Error("undef in edge " + key + figure.edges.length);
+	      }
 	      return <line key={key} stroke='green' strokeWidth='2'
 			       x1={from[0]} y1={from[1]}
 			       x2={to[0]} y2={to[1]} />;

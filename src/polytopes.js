@@ -63,15 +63,15 @@ export class cube extends polytope {
 }
 
 /*
- * Kite (cross polytope)
+ * Orthoplex (cross polytope; kite)
  *	The vertices are at +-1 in each dimension;
  *	Each vertex is connected to all vertices off its own axis
  *      That's 2d * (2d - 2) /2 = 2d^2 - d
  */
-export class kite extends polytope {
+export class orthoplex extends polytope {
     constructor(dim) {
 	super(dim, dim * 2, 2 * dim * (dim - 1));
-	this.name = 'kite';
+	this.name = 'orthoplex';
 	// The easy thing is to do the vertices two at a time.
 	for (let i = 0; i < dim; ++i) {
 	    let v1=[];
@@ -106,6 +106,19 @@ export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
 	this.name = 'simplex';
+	
+	if (this.dimension !== dim || this.vertices.length !== 0 || this.edges.length !== 0) {
+	    throw new Error("want " + this.nEdges + " edges into " + this.edges.length +
+			    "; want " + this.nVertices + " verts into " + this.vertices.length +
+			    " in " + this.dimension + '-D ' + this.name
+			   );
+	}
+	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2)) {
+	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
+			    "; nVertices = " + this.nVertices + " want " + (dim + 1) +
+			    " in " + this.dimension + '-D ' + this.name
+			   );
+	}
 	for (let i = 0; i < dim; ++i) {
 	    let vertex=[];
 	    for (let j = 0; j < dim; ++j) {
@@ -113,12 +126,28 @@ export class simplex extends polytope {
 	    }
 	    this.vertices.push(makePoint(dim, vertex));
 	}
+	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2) ||
+	    this.vertices.length !== dim || this.edges.length !== 0 ) {
+	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
+			    "; nVertices = " + this.nVertices + " want " + dim +
+			    "; vertices.length = " + this.vertices.length +
+			    ' at this point in the initialization, where dim = ' + dim +
+			    " in " + this.dimension + '-D ' + this.name
+			   );
+	}
 	let x = - sqrt(1.0/dim);
 	let vertex=[];
 	for (let i = 0; i < dim; ++i) {
 	    vertex.push(x);
 	}
 	this.vertices.push(makePoint(dim, vertex));
+	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
+	    // something goes massively wrong, right here.
+	    throw new Error("expect " + this.nVertices + " verts, have " + this.vertices.length +
+			    " in " + this.dimension + '-D ' + this.name +
+			    "; want " + this.nEdges + " edges into " + this.edges.length
+			   );
+	}
 	// now the edges.
 	for (let i = 0; i < dim + 1; i++) {
 	    // for each vertex except the last, 
@@ -127,5 +156,26 @@ export class simplex extends polytope {
 		this.edges.push([i, j]);
 	    }		
 	}
+	if (this.edges.length > this.nEdges) {
+	    throw new Error("expect " + this.nEdges + " but have " + this.edges.length +
+			    " in " + this.dimension + '-D ' + this.name + ' with ' +
+			    this.vertices.length + ' vertices, expecting ' + this.nVertices
+			   );
+	}
+    }
+}
+
+export class polytopeFactory {
+    constructor(dim) {
+	this.dimensions = dim;
+	this.polytopes = [];
+	// Create the usual suspects
+	this.polytopes.push(new simplex(dim));
+	this.polytopes.push(new orthoplex(dim));
+	this.polytopes.push(new cube(dim));
+    }
+
+    getPolytope(n) {
+	return this.polytopes[n];
     }
 }

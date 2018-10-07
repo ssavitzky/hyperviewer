@@ -1,4 +1,4 @@
-import { cube, kite, simplex } from './polytopes';
+import { cube, orthoplex, simplex, polytopeFactory } from './polytopes';
 
 it('has typed arrays', () => {
     expect((typeof Float64Array).toBeDefined);
@@ -13,7 +13,7 @@ function roughlyEqual(v1, v2) {
 
 // test whether a vertex is on the unit sphere
 function onUnitSphere(vertex) {
-    norm = 0.0;
+    let norm = 0.0;
     for (let j = 0; j < vertex.size; j++) {
 	norm += vertex.get(j) ** 2;
     }
@@ -21,7 +21,7 @@ function onUnitSphere(vertex) {
 } 
 
 it('makes cubes with the right number of vertices and edges', () => {
-    for (let dim = 2; dim < 5; ++dim) {
+    for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
 	expect(theCube.dimension).toBe(dim);
 	expect(theCube.nVertices).toBe(1<<dim);
@@ -30,14 +30,14 @@ it('makes cubes with the right number of vertices and edges', () => {
     }
 });
 
-it('makes kites with the right number of vertices and edges', () => {
-    for (let dim = 3; dim < 6; ++dim) {
-	let theKite = new kite(dim);
-	expect(theKite.dimension).toBe(dim);
-	expect(theKite.nVertices).toBe(2 * dim);
-	expect(theKite.vertices.length).toBe(theKite.nVertices);
-	expect(theKite.nEdges).toBe(2 * dim * (dim - 1));
-	expect(theKite.edges.length).toBe(theKite.nEdges);
+it('makes orthoplexs with the right number of vertices and edges', () => {
+    for (let dim = 2; dim < 6; ++dim) {
+	let theOrthoplex = new orthoplex(dim);
+	expect(theOrthoplex.dimension).toBe(dim);
+	expect(theOrthoplex.nVertices).toBe(2 * dim);
+	expect(theOrthoplex.vertices.length).toBe(theOrthoplex.nVertices);
+	expect(theOrthoplex.nEdges).toBe(2 * dim * (dim - 1));
+	expect(theOrthoplex.edges.length).toBe(theOrthoplex.nEdges);
     }
 });
 
@@ -55,16 +55,40 @@ it('makes simplices with the right number of vertices and edges', () => {
 it('puts vertices on the unit sphere', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
-	let theKite = new kite(dim);
+	let theOrthoplex = new orthoplex(dim);
 	let theSimplex = new simplex(dim);
-	for (let v = 0; v < theCube.vertices; ++v) {
+	for (let v = 0; v < theCube.nVertices; ++v) {
 	    expect(onUnitSphere(theCube.vertices[v])).toBeTrue;
 	}
-	for (let v = 0; v < theKite.vertices; ++v) {
-	    expect(onUnitSphere(theKite.vertices[v])).toBeTrue;
+	for (let v = 0; v < theOrthoplex.nVertices; ++v) {
+	    expect(onUnitSphere(theOrthoplex.vertices[v])).toBeTrue;
 	}
-	for (let v = 0; v < theSimplex.vertices; ++v) {
+	for (let v = 0; v < theSimplex.nVertices; ++v) {
 	    expect(onUnitSphere(theSimplex.vertices[v])).toBeTrue;
+	}
+    }
+});
+
+it('makes figures correctly', () => {
+    for (let d = 2; d < 4; d++) {
+	let factory = new polytopeFactory(d);
+	for (let f = 0; f < 3; f++) {
+	    let fig = factory.getPolytope(f);
+	    expect(fig.vertices.length).toBe(fig.nVertices);
+	    expect(fig.edges.length).toBe(fig.nEdges);
+	}
+	for (let f = 0; f < 3; f++) {
+	    let fig = factory.getPolytope(f);
+	    expect(fig.vertices.length).toBe(fig.nVertices);
+	    expect(fig.edges.length).toBe(fig.nEdges);
+	}
+    }
+    for (let d = 2; d < 4; d++) {
+	let factory = new polytopeFactory(d);
+	for (let f = 0; f < 3; f++) {
+	    let fig = factory.getPolytope(f);
+	    expect(fig.vertices.length).toBe(fig.nVertices);
+	    expect(fig.edges.length).toBe(fig.nEdges);
 	}
     }
 });
