@@ -5,7 +5,7 @@ import {polytopeFactory} from './polytopes';
 import {transformStack, rotationState} from './transform-stack';
 import './App.css';
 
-var defaultDimensions = 3;
+var defaultDimensions = 4;
 var defaultFigure = 1;
 
 const DEGREES = PI/180;

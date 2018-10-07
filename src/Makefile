@@ -8,10 +8,13 @@
 #
 
 PROD_BRANCH = prod
-BUILD_DIR = build
 
-# This really wants to be better parametrized
-UPLOAD_TO = savitzky.net:vv/prj/hyperviewer/src/build
+BUILD_DIR = $(wildcard ../build build)
+
+
+# This really wants to be better parametrized.
+#	Note:  rsync ../build to its parent directory.
+UPLOAD_TO = savitzky.net:vv/prj/hyperviewer
 
 ###
 SHELL=/bin/bash
@@ -93,9 +96,12 @@ production:
 
 # upload build directory
 #	This is much simpler than publishing into and pushing a git branch.
+#	Note:  upload does not require 
+#	builds into ../build (assuming we're in src)
 #
-upload: build
+upload:
 	$(MAKE) test
+	$(MAKE) build
 	rsync -a $(BUILD_DIR) $(UPLOAD_TO)
 
 
@@ -117,5 +123,5 @@ include $(CHAIN)
 #	see whether MakeStuff/Makefile is properly chained in.  It's also a very
 #	handy way to see whether your make variables are defined properly.
 report-vars::
-	@echo -ne "" $(foreach v,SERVER_PID name EXT DRAFT POST,$(v)=$($(v)) "\n")
+	@echo -ne "" $(foreach v,SERVER_PID BUILD_DIR SRC_DIR,$(v)=$($(v)) "\n")
 	@echo " " CHAIN=$(CHAIN)
