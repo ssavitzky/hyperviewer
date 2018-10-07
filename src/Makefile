@@ -44,9 +44,10 @@ serve:
 	npm start
 
 # run tests
-#
+#	Setting CI appears to be the way to make it run all tests and
+#	then quit.
 test:
-	npm run test
+	CI=true npm run test
 
 # build for production
 #
@@ -73,8 +74,11 @@ github:
 	git push github
 
 # publishing a production branch to (non-github) server
-#	Fail if: there are modified files present, the tests failed,
+#	Fail if: there are modified files present
 #		 or there is no prod branch to check out.
+#
+# 	It would be nice if we could run the tests, but there doesn't seem to be
+#	a clean way of running them all just once.
 #
 production:
 	@[ -z "`git status --short`" ] || (git status --short; false)
