@@ -9,6 +9,12 @@ At the moment the only controls are a pair of sliders -- the left-hand one
 controls the dimensionality, and the right-hand one selects the object.
 Currently only the simplex, octoplex, and cube are implemented.
 
+## Documentation
+
+... is pretty sketchy at this point, but there is a narrative of the
+development process at [Adventures in hyperspace (and
+JavaScript)](https://computer-curmudgeon.com/2018/10/08/adventures-in-hyperspace.html)
+
 ## To do
 
   * Replace the object-selection slider with a dropdown selector.
