@@ -21,10 +21,16 @@ const MIN_DIM = 2;
  *        Our hacky solution is simply to cache all the polytopes we're going to
  *        need, so that we don't have to do it twice.
  */
+const BUG = false;
 const polytopeFactories = [];
 for (let n = MIN_DIM; n <= MAX_DIM; n++) {
     polytopeFactories.push(new polytopeFactory(n));
 }
+function getPolytopeFactory(dim) {
+    if (BUG) { return new polytopeFactory(dim); }
+    return polytopeFactories[dim - MIN_DIM];
+}
+   
 
 class App extends Component {
     constructor(props) {
@@ -47,13 +53,8 @@ class App extends Component {
 	    cycles: 0,
 	};
 	state.dimensions = dimensions;
-	state.polytopeFactory = polytopeFactories[dimensions - MIN_DIM];
-	state.figure = state.polytopeFactory.getPolytope(state.figureIndex);
-	state.transforms = new transformStack(dimensions);
-	for (let r of state.rotationStates) {
-	    r.applyTo(state.transforms);
-	}
-	state.transform = state.transforms.getComposed();
+	let polytopeFactory = getPolytopeFactory(dimensions);
+	state.figure = polytopeFactory.getPolytope(state.figureIndex);
 	this.state = state;
     }
     
@@ -72,48 +73,38 @@ class App extends Component {
     /* State updaters */
 
     rotate = (oldstate, props) => {
-	let newstate = {...oldstate};
-	newstate.rotationStates = oldstate.rotationStates.map((state) => state.tick());
-	++ newstate.cycles;
-	newstate.transforms = new transformStack(newstate.dimensions);
-	for (let r of newstate.rotationStates) {
-	    r.applyTo(newstate.transforms);
-	}
-	newstate.transform = newstate.transforms.getComposed();
-	return newstate;
+	let state = {...oldstate};
+	state.rotationStates = oldstate.rotationStates.map((state) => state.tick());
+	++ state.cycles;
+	return state;
     }
 
     setDimensions(dimensions, oldstate) {
 	let state = {...oldstate};
 	state.dimensions = dimensions;
-	state.polytopeFactory = polytopeFactories[dimensions - MIN_DIM];
-	state.figureIndex = oldstate.figureIndex;
-	state.figure = state.polytopeFactory.getPolytope(state.figureIndex);
-	state.transforms = new transformStack(dimensions);
-	for (let r of state.rotationStates) {
-	    r.applyTo(state.transforms);
-	}
-	state.transform = state.transforms.getComposed();
+	// calling new polytopeFactory here -> not a constructor error
+	// calling new simplex fails with the bug
+	let polytopeFactory = getPolytopeFactory(dimensions);
+	state.figure = polytopeFactory.getPolytope(state.figureIndex);
 	return state;
     }
 
-    updateDimensions(dim) {
+    updateDimensions(dimensions) {
 	this.setState((oldstate, props) => {
-	    return this.setDimensions(dim, oldstate);
+	    return this.setDimensions(dimensions, oldstate);
 	});
     }
 
     handleDimensionChange = (event) => this.updateDimensions(event.target.value);
 
     updateFigure(index) {
-	if (index < 0 || index > 2) {
-	    return;
-	}
 	this.setState((oldstate, props) => {
-	    let newState = {...oldstate};
-	    newState.figureIndex = index;
-	    newState.figure = oldstate.polytopeFactory.getPolytope(newState.figureIndex);
-	    return newState;
+	    let state = {...oldstate};
+	    state.figureIndex = index;
+	    // calling new polytopeFactory _here_ works fine.
+	    let polytopeFactory = getPolytopeFactory(state.dimensions);
+	    state.figure = polytopeFactory.getPolytope(state.figureIndex);
+	    return state;
 	});
     }
     handleFigureChange = (event) => this.updateFigure(event.target.value);
@@ -122,16 +113,18 @@ class App extends Component {
 	let state=(this.state);
 	let size = state.viewerSize;
 	let figure = state.figure;
+	// At this point we could re-use a transformStack passed to us in the state.
+	// Right now we're playing it safe and treating it as immutable.
 	let transforms = new transformStack(state.dimensions);
 	for (let r of state.rotationStates) {
 	    r.applyTo(transforms);
 	}
 	let transformed = transforms.transformPoints(figure.vertices);
-	let verts = transforms.getScreenPoints(transformed, state.viewAngle, size);
+	let screenVerts = transforms.getScreenPoints(transformed, state.viewAngle, size);
 	return (
 	    <div className="App">
               <header className="App-header">
-		<h3>{`Welcome to Hyperspace Express Viewer on Inferno version ${version}`}</h3>
+		<h3>{`Hyperspace Viewer on Inferno version ${version}`}</h3>
               </header>
 	      this is a {state.dimensions.toString()}-dimensional { state.figure.name }
 	      <br/>
@@ -139,7 +132,7 @@ class App extends Component {
 				callback={this.handleDimensionChange}
 				/>
 	      <SelectFigure value={state.figureIndex} min="0" max="2"
-		       callback={this.handleFigureChange}/>
+		            callback={this.handleFigureChange}/>
 	      <p>
 		{ String(state.figure.nVertices) + " Vertices, " }
 		{ figure.nEdges.toString() + " edges, " }
@@ -147,7 +140,7 @@ class App extends Component {
 		{ transforms.nTransforms() + " transforms " }
 	      </p>
 	      <Viewer viewSize={state.viewerSize} viewAngle={state.cameraAngle}
-		      figure={state.figure} transforms={state.transforms} />
+		      figure={state.figure} screenVerts={screenVerts} />
 	    </div>
     );
   }
@@ -161,13 +154,7 @@ class App extends Component {
 function Viewer(props) {
     let size = props.viewSize;
     let figure = props.figure;
-    let transformed = props.transforms.transformPoints(figure.vertices);
-    let verts = props.transforms.getScreenPoints(transformed, props.viewAngle, size);
-    if (figure.edges.length > figure.nEdges) {
-	throw new Error("expect " + figure.nEdges + " but have " + figure.edges.length +
-			" in " + figure.dimension + '-D ' + figure.name
-		       );
-    }
+    let verts = props.screenVerts;
     return (
 	<svg width={size} height={size}>
 	  <circle cx={size/2} cy={size/2} r={3} fill="red" />
@@ -176,9 +163,6 @@ function Viewer(props) {
 	      let key = String(n) + ':[' + edge[0] + ',' + edge[1] + ']';
 	      let from = verts[edge[0]];
 	      let to = verts[edge[1]];
-	      if (from === undefined || to === undefined) {
-		  throw new Error("undef in edge " + key + figure.edges.length);
-	      }
 	      return <line key={key} stroke='green' strokeWidth='2'
 			       x1={from[0]} y1={from[1]}
 			       x2={to[0]} y2={to[1]} />;
