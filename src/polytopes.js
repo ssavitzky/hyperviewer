@@ -120,9 +120,9 @@ export class simplex extends polytope {
 			   );
 	}
 	for (let i = 0; i < dim; ++i) {
-	    let vertex=[];
+	    let vertex = new Float64Array(dim);
 	    for (let j = 0; j < dim; ++j) {
-		vertex.push((i === j)? 1.0 : 0.0);
+		vertex[j] = ((i === j)? 1.0 : 0.0);
 	    }
 	    this.vertices.push(makePoint(dim, vertex));
 	}
@@ -136,9 +136,9 @@ export class simplex extends polytope {
 			   );
 	}
 	let x = - sqrt(1.0/dim);
-	let vertex=[];
+	let vertex = new Float64Array(dim);
 	for (let i = 0; i < dim; ++i) {
-	    vertex.push(x);
+	    vertex[i] = x;
 	}
 	this.vertices.push(makePoint(dim, vertex));
 	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
