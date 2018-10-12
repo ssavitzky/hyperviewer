@@ -200,12 +200,14 @@ export class rotationState {
 	this.delta = delta;
     }
 
-    applyTo(transformStack) {
-	transformStack.setRotation(this.index, this.axis1, this.axis2, this.angle);
+    applyTo(transformStack, cycles) {
+	let angle = this.angle + this.delta * (cycles? cycles : 1);
+	transformStack.setRotation(this.index, this.axis1, this.axis2, angle);
     }
 
     /*
      * add delta to angle; return this if unchanged, new state if updated
+     * This can be used instead of multiplying the angle by the cycle number.
      */
     tick() {
 	if (this.delta === 0) {

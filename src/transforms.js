@@ -95,11 +95,14 @@ export class matrix {
  * A vector is not a matrix.
  */
 export class vector {
-    constructor(dimensions) {
+    constructor(dimensions, f) {
 	this.shape = [ dimensions ];
 	this.dimensions = dimensions;
 	this.size = dimensions;	      // for ndarray compatibility
 	this.values = new Float64Array(this.dimensions);
+	if (f) {
+	    this.fill(f);
+	}
     }
 
     fill(f) {
@@ -111,6 +114,10 @@ export class vector {
     
     get(n) {
 	return this.values[n];
+    }
+    
+    put(n, v) {
+	 this.values[n] = v;
     }
     
 }
@@ -202,7 +209,7 @@ export function fill(matrix, f) {
  */
 export function apply(dest, transform, point) {
     if (dest === undefined) {
-	dest = makePoint(point.size);
+	dest = new vector(point.size);
     }
     return transform.transform(point, dest);
 }

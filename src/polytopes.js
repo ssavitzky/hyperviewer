@@ -1,5 +1,5 @@
 import {sqrt} from 'math';
-import {makePoint} from './transforms';
+import {vector} from './transforms';
 
 /*
  * This package lets us create and transform n-dimensional polytopes.
@@ -19,15 +19,14 @@ import {makePoint} from './transforms';
  * get there.)  Dimensions greater than four have only the cube, kite,
  * and simplex.
  */
-export class polytope {
+class polytope {
     constructor(dim, nVertices, nEdges) {
-	this.dimension = dim;
+	this.dimensions = dim;
 	this.nVertices = nVertices;
 	this.nEdges = nEdges;
 	this.vertices = [];
 	this.edges = [];
 	this.faces = [];
-	return this;
     }
 }
 
@@ -41,16 +40,18 @@ export class cube extends polytope {
     constructor(dim) {
 	super(dim, 1 << dim, (1 << dim) * dim / 2);
 	this.name = 'cube';
+	this.aka  = [ 'measure polytope'];
+	if (dim === 4) {
+	    this.aka.push('hypercube');
+	    this.aka.push('tesseract');
+	} else if (dim === 2) {
+	    this.aka.push('square');
+	}
 	// We want the vertices to land on the unit (hyper)sphere
 	// so the sum of the squares of the coordinates has to be 1
 	let d = sqrt(1/dim);
 	for (let i = 0; i < this.nVertices; ++i) {
-	    let vertex = new Float64Array(dim);
-	    for (let j = 0; j < dim; ++j) {
-		// positive if i has a 1 bit in the jth position
-		vertex[j] = ((i & (1<<j)? d : -d));
-	    }
-	    this.vertices.push(makePoint(dim, vertex));
+	    this.vertices.push(new vector(dim).fill((j) =>  (i & (1<<j)? d : -d)));
 	}
 	for (let i = 0; i < (1 << dim); ++i) {
 	    for (let j = 0; j < dim; ++j) {
@@ -72,16 +73,17 @@ export class orthoplex extends polytope {
     constructor(dim) {
 	super(dim, dim * 2, 2 * dim * (dim - 1));
 	this.name = 'orthoplex';
+	this.aka  = [ 'cross polytope', 'kite' ];
+	if (dim === 3) {
+	    this.aka.push('octohedron');
+	} else if (dim === 2) {
+	    this.aka.push('square');
+	}
+
 	// The easy thing is to do the vertices two at a time.
 	for (let i = 0; i < dim; ++i) {
-	    let v1=[];
-	    let v2=[];
-	    for (let j = 0; j < dim; ++j) {
-		v1.push((i === j)? 1.0 : 0.0);
-		v2.push((i === j)? -1.0 : 0.0);
-	    }
-	    this.vertices.push(makePoint(dim, v1));
-	    this.vertices.push(makePoint(dim, v2));
+	    this.vertices.push(new vector(dim).fill((j) =>(i === j)? 1.0 : 0.0));
+	    this.vertices.push(new vector(dim).fill((j) =>(i === j)? -1.0 : 0.0));
 	}
 	// now the edges.
 	//     The vertices for axis d are at 2d and 2d+1
@@ -106,45 +108,34 @@ export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
 	this.name = 'simplex';
-	
-	if (this.dimension !== dim || this.vertices.length !== 0 || this.edges.length !== 0) {
-	    throw new Error("want " + this.nEdges + " edges into " + this.edges.length +
-			    "; want " + this.nVertices + " verts into " + this.vertices.length +
-			    " in " + this.dimension + '-D ' + this.name
-			   );
+	this.aka  = [];
+	if (dim === 3) {
+	    this.aka.push('tetrahedron');
+	} else if (dim === 2) {
+	    this.aka.push('triangle');
 	}
-	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2)) {
-	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
-			    "; nVertices = " + this.nVertices + " want " + (dim + 1) +
-			    " in " + this.dimension + '-D ' + this.name
-			   );
-	}
-	for (let i = 0; i < dim; ++i) {
-	    let vertex = new Float64Array(dim);
-	    for (let j = 0; j < dim; ++j) {
-		vertex[j] = ((i === j)? 1.0 : 0.0);
-	    }
-	    this.vertices.push(makePoint(dim, vertex));
-	}
+	this.edges = [];
+	this.vertices = new Array(dim+1);
+	this.nEdges = (dim + 1) * dim / 2;
+	// something goes massively wrong, right here.
 	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2) ||
-	    this.vertices.length !== dim || this.edges.length !== 0 ) {
+	    this.vertices.length !== dim+1 || this.edges.length !== 0 ) {
 	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
 			    "; nVertices = " + this.nVertices + " want " + dim +
 			    "; vertices.length = " + this.vertices.length +
 			    ' at this point in the initialization, where dim = ' + dim +
-			    " in " + this.dimension + '-D ' + this.name
+			    " in " + this.dimensions + '-D ' + this.name 
 			   );
 	}
-	let x = - sqrt(1.0/dim);
-	let vertex = new Float64Array(dim);
 	for (let i = 0; i < dim; ++i) {
-	    vertex[i] = x;
+	    this.vertices[i] = (new vector(dim).fill((j) => i === j? 1.0 : 0));
 	}
-	this.vertices.push(makePoint(dim, vertex));
+	let x = - sqrt(1.0/dim);
+	this.vertices[dim] = (new vector(dim).fill((i) => x));
+	
 	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
-	    // something goes massively wrong, right here.
 	    throw new Error("expect " + this.nVertices + " verts, have " + this.vertices.length +
-			    " in " + this.dimension + '-D ' + this.name +
+			    " in " + this.dimensions + '-D ' + this.name +
 			    "; want " + this.nEdges + " edges into " + this.edges.length
 			   );
 	}
@@ -158,13 +149,17 @@ export class simplex extends polytope {
 	}
 	if (this.edges.length > this.nEdges) {
 	    throw new Error("expect " + this.nEdges + " but have " + this.edges.length +
-			    " in " + this.dimension + '-D ' + this.name + ' with ' +
+			    " in " + this.dimensions + '-D ' + this.name + ' with ' +
 			    this.vertices.length + ' vertices, expecting ' + this.nVertices
 			   );
 	}
     }
 }
 
+
+/*
+ * This makes a list of the polytopes for a given dimension.
+ */
 export class polytopeFactory {
     constructor(dim) {
 	this.dimensions = dim;
@@ -178,4 +173,22 @@ export class polytopeFactory {
     getPolytope(n) {
 	return this.polytopes[n];
     }
+
+    getPolytopes() {
+	return this.polytopes;
+    }
+}
+
+const MIN_DIM = 2;
+const MAX_DIM = 6;
+
+const polytopeFactories = [];
+for (let n = MIN_DIM; n <= MAX_DIM; n++) {
+    polytopeFactories.push(new polytopeFactory(n));
+}
+function getPolytopeFactory(dim) {
+    return polytopeFactories[dim - MIN_DIM];
+}
+export function getPolytopesFor(dimension) {
+    return getPolytopeFactory(dimension).polytopes;
 }

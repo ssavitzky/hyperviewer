@@ -23,7 +23,7 @@ function onUnitSphere(vertex) {
 it('makes cubes with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
-	expect(theCube.dimension).toBe(dim);
+	expect(theCube.dimensions).toBe(dim);
 	expect(theCube.nVertices).toBe(1<<dim);
 	expect(theCube.vertices.length).toBe(1 << dim);
 	expect(theCube.edges.length).toBe(theCube.nEdges);
@@ -33,7 +33,7 @@ it('makes cubes with the right number of vertices and edges', () => {
 it('makes orthoplexs with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theOrthoplex = new orthoplex(dim);
-	expect(theOrthoplex.dimension).toBe(dim);
+	expect(theOrthoplex.dimensions).toBe(dim);
 	expect(theOrthoplex.nVertices).toBe(2 * dim);
 	expect(theOrthoplex.vertices.length).toBe(theOrthoplex.nVertices);
 	expect(theOrthoplex.nEdges).toBe(2 * dim * (dim - 1));
@@ -44,7 +44,7 @@ it('makes orthoplexs with the right number of vertices and edges', () => {
 it('makes simplices with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theSimplex = new simplex(dim);
-	expect(theSimplex.dimension).toBe(dim);
+	expect(theSimplex.dimensions).toBe(dim);
 	expect(theSimplex.nVertices).toBe(1 + dim);
 	expect(theSimplex.nEdges).toBe((dim + 1) * dim / 2);
 	expect(theSimplex.vertices.length).toBe(theSimplex.nVertices);
