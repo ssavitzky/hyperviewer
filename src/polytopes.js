@@ -30,6 +30,7 @@ class polytope {
 	this.vertices = [];
 	this.edges = [];
 	this.faces = [];
+	this.aka  = []; 	// other names for the figure
     }
 }
 
@@ -43,7 +44,7 @@ export class cube extends polytope {
     constructor(dim) {
 	super(dim, 1 << dim, (1 << dim) * dim / 2);
 	this.name = 'cube';
-	this.aka  = [ 'measure polytope'];
+	this.aka.push('measure polytope');
 	if (dim === 4) {
 	    this.aka.push('hypercube');
 	    this.aka.push('tesseract');
@@ -110,19 +111,16 @@ export class orthoplex extends polytope {
 export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
+	/* Note:  not extending polytope doesn't change anything */
 	this.name = 'simplex';
-	this.aka  = [];
 	if (dim === 3) {
 	    this.aka.push('tetrahedron');
 	} else if (dim === 2) {
 	    this.aka.push('triangle');
 	}
-	this.edges = [];
-	this.vertices = new Array(dim+1);
-	this.nEdges = (dim + 1) * dim / 2;
 	// something goes massively wrong, right here.
 	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2) ||
-	    this.vertices.length !== dim+1 || this.edges.length !== 0 ) {
+	    this.vertices.length !== 0 || this.edges.length !== 0 ) {
 	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
 			    "; nVertices = " + this.nVertices + " want " + dim +
 			    "; vertices.length = " + this.vertices.length +
@@ -131,10 +129,10 @@ export class simplex extends polytope {
 			   );
 	}
 	for (let i = 0; i < dim; ++i) {
-	    this.vertices[i] = (new vector(dim).fill((j) => i === j? 1.0 : 0));
+	    this.vertices.push(new vector(dim).fill((j) => i === j? 1.0 : 0));
 	}
 	let x = - sqrt(1.0/dim);
-	this.vertices[dim] = (new vector(dim).fill((i) => x));
+	this.vertices.push(new vector(dim).fill((i) => x));
 	
 	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
 	    throw new Error("expect " + this.nVertices + " verts, have " + this.vertices.length +
