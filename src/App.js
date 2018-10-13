@@ -33,15 +33,17 @@ class App extends Component {
 	 * For now we just make a couple of random rotation states; 
 	 */
 	rotationStates.push(new rotationState(0, 0, 1, 30*DEGREES, 1*DEGREES));
-	rotationStates.push(new rotationState(1, 0, 2, 30*DEGREES, 1*DEGREES));
-	rotationStates.push(new rotationState(2, 1, 3, 20*DEGREES, 1*DEGREES));
-	rotationStates.push(new rotationState(3, 0, 3, 20*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(1, 0, 2, 30*DEGREES, 1.1*DEGREES));
+	rotationStates.push(new rotationState(2, 1, 2, 30*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(3, 1, 3, 20*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(4, 0, 3, 20*DEGREES, 1*DEGREES));
+	rotationStates.push(new rotationState(5, 3, 4, 20*DEGREES, .2*DEGREES));
 
 	let state = this.setDimensions(dimensions, {
 	    dimensions: dimensions,
 	    figureIndex: defaultFigure,
 	    viewerSize: 500,
-	    viewAngle: 60*DEGREES,
+	    viewAngle: 30*DEGREES,
 	    rotationStates: rotationStates,
 	    cycles: 0,
 	    
@@ -64,7 +66,6 @@ class App extends Component {
 	    return this.setDimensions(dimensions, oldstate);
 	});
     }
-
     handleDimensionChange = (event) => this.updateDimensions(event.target.value);
 
     updateFigure(index) {
@@ -76,10 +77,18 @@ class App extends Component {
 	});
     }
     handleFigureChange = (event) => this.updateFigure(event.target.value);
+
+    updateViewAngle(angle) {
+	this.setState((oldstate, props) => {
+	    let state = {...oldstate};
+	    state.viewAngle = angle * DEGREES;
+	    return state;
+	});
+    }
+    handleViewAngle = (event) => this.updateViewAngle(event.target.value);
     
     render() {
 	let state=(this.state);
-	let size = state.viewerSize;
 	let figure = state.figure;
 	let otherNames = figure.aka.length > 0
 	    ? ' (' + figure.aka.join(', ') + ')'
@@ -92,18 +101,20 @@ class App extends Component {
 	      this is a {state.dimensions.toString()}-dimensional { state.figure.name }
 	      { otherNames }
 	      <br/>
-	      <SelectDimensions value={state.dimensions} min={MIN_DIM} max={MAX_DIM}
+	      2<SelectDimensions value={state.dimensions} min={MIN_DIM} max={MAX_DIM}
 				callback={this.handleDimensionChange}
-				/>
+				 />{MAX_DIM} 
 	      <SelectFigure value={state.figureIndex} list={state.polytopeList}
 		            callback={this.handleFigureChange}/>
+	      <SetViewAngle value={state.viewAngle / DEGREES} min={0} max={60}
+		            callback={this.handleViewAngle}/> {state.viewAngle/DEGREES}
 	      <p>
-		{ String(state.figure.nVertices) + " Vertices, " }
+		{ " " + String(state.figure.nVertices) + " Vertices, " }
 		{ figure.nEdges.toString() + " edges, " }
 	      </p>
-	      <Viewer viewSize={state.viewerSize} viewAngle={state.cameraAngle}
+	      <Viewer viewSize={state.viewerSize} viewAngle={state.viewAngle}
 		      figure={state.figure} rotationStates={state.rotationStates}
-		      key={figure.name + figure.dimensions}
+		      key={figure.name + figure.dimensions + state.viewAngle}
 		      />
 	    </div>
     );
@@ -182,7 +193,7 @@ class Viewer extends Component {
     }
 }
 
-function SelectDimensions(props) {
+function SetViewAngle(props) {
     return (
 	<input type="range" value={props.value} min={props.min} max={props.max}
 	       onInput={props.callback}
@@ -190,27 +201,26 @@ function SelectDimensions(props) {
     );
 }
 
-// Making this a class doesn't help the flicker
-class SelectFigure extends Component {
-    constructor(props) {
-	super(props);
-	this.list = props.list;
-	this.index = props.index;
-	this.callback = props.callback;
-    }
+function SelectDimensions(props) {
+    return (
+	<input type="range" value={props.value} min={props.min} max={props.max}
+	       onInput={props.callback} step={1}
+	       />
+    );
+}
 
-    render() {
-	let list = this.list;
-	let index = this.index;
-	return (<select onInput={this.callback} $HasKeyedChildren>
-	  { list.map((fig, n) => {
+// Making this a class doesn't help the flicker
+function SelectFigure(props) {
+    let list = props.list;
+    let index = props.value;
+    return (<select onInput={props.callback} $HasKeyedChildren>
+	    { list.map((fig, n) => {
 	      return (n === index)
 		  ?  <option value={n} key={fig.name} selected>{fig.name}</option>
 		  :  <option value={n} key={fig.name}         >{fig.name}</option>;
 	      })
-	  }
-		</select>);
-    }
+	    }
+	    </select>);
 }
 
 export default App;

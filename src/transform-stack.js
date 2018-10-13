@@ -35,7 +35,7 @@ export class transformStack {
      * The argument to the constructor specifies the dimensionality.
      */
     constructor(dim) {
-	this.dim = dim;
+	this.dimensions = dim;
 	this.stack = [];
 	this.temps = [];
 	this.modifiedFrom = 0;
@@ -50,11 +50,11 @@ export class transformStack {
      */
     addTransform(transform) {
 	if (transform === undefined) {
-	    transform = identity(makeTransform(this.dim));
+	    transform = identity(makeTransform(this.dimensions));
 	}
 	this.stack.push(transform);
 	if (this.nTransforms() > 0) {
-	    this.temps.push(makeTransform(this.dim));
+	    this.temps.push(makeTransform(this.dimensions));
 	} else {
 	    this.temps.push(transform);
 	}
@@ -122,7 +122,7 @@ export class transformStack {
      * setRotation
      */
     setRotation(n, x1, x2, theta) {
-	if (x1 >= this.dim || x2 >= this.dim)
+	if (x1 >= this.dimensions || x2 >= this.dimensions)
 	{
 	    return this;
 	}
@@ -148,7 +148,7 @@ export class transformStack {
     transformPoints(vertices) {
 	let xform = this.nTransforms() > 0
 	    ? this.getComposed()
-	    : identity(makeTransform(this.dim));
+	    : identity(makeTransform(this.dimensions));
 	this.transformed = map(this.transformed, xform, vertices);
 	return this.transformed;
     }
@@ -165,22 +165,30 @@ export class transformStack {
 	let nVertices = transformed.length;
 	let Q = screenSize/2;
 	let A = viewingAngle/2;
-	let r = 1 / tan(A);
-	let p = 1/sin(A);
+	let p = 1/tan(A);	// distance from viewpoint to origin
+	// r corrects for the fact that the viewing cone needs to be tangent to the
+	// unit sphere.   The solution is to either move the sphere back a little.
+	// (Former solutions tried to, effectively, shrink it; that doesn't work
+	// because we have to add something to the denominator, not multiply it.)
+	// so p + r = 1/sin(A), and
+	let r = 1 / sin(A) - p;
+	// it's safe to compute p and r even when A=0, as long as we don't use them.
 	for (let n = 0; n < nVertices; ++n) {
 	    let X = transformed[n].get(0);
 	    let Y = transformed[n].get(1);
-	    for (let i = 2; i < this.dimension; ++i) {
-		let z = transformed[n].get(i);
-		X = r * X / (z + p);
-		Y = r * Y / (z + p); // y = 0 is at the top
+	    if (A !== 0) {
+		for (let i = 2; i < this.dimensions; ++i) {
+		    let z = transformed[n].get(i);
+		    X = p * X / (z + p + r);
+		    Y = p * Y / (z + p + r); 
+		}
 	    }
-	    //X = Q + Q * x; Y = Q + Q * y; // ortho projection for debugging
+	    //X = transformed[n].get(0); Y = transformed[n].get(1); // ortho for debugging
 	    if (screenPoints.length < n+1) {
 		screenPoints.push([Q + Q * X, Q - Q * Y]);
 	    } else {
 		screenPoints[n][0] = Q + Q * X;
-		screenPoints[n][1] = Q - Q * Y;
+		screenPoints[n][1] = Q - Q * Y;  // y = 0 is at the top
 	    }
 	}
 	return screenPoints;
