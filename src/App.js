@@ -96,26 +96,30 @@ class App extends Component {
 	return (
 	    <div className="App">
               <header className="App-header">
-		<h3>{`Hyperspace Viewer on Inferno version ${version}`}</h3>
+		<h3>Hyperspace Viewer</h3>
               </header>
-	      this is a {state.dimensions.toString()}-dimensional { state.figure.name }
-	      { otherNames }
-	      <br/>
-	      2<SelectDimensions value={state.dimensions} min={MIN_DIM} max={MAX_DIM}
+	      <SelectDimensions value={state.dimensions} min={MIN_DIM} max={MAX_DIM}
 				callback={this.handleDimensionChange}
-				 />{MAX_DIM} 
+				 />
 	      <SelectFigure value={state.figureIndex} list={state.polytopeList}
 		            callback={this.handleFigureChange}/>
-	      <SetViewAngle value={state.viewAngle / DEGREES} min={0} max={60}
-		            callback={this.handleViewAngle}/> {state.viewAngle/DEGREES}
-	      <p>
-		{ " " + String(state.figure.nVertices) + " Vertices, " }
-		{ figure.nEdges.toString() + " edges, " }
+	      <SetViewAngle value={state.viewAngle / DEGREES} min={0} max={90}
+		            callback={this.handleViewAngle}/>
+	      <p> A {state.dimensions}-D { state.figure.name } { otherNames }
+		{ ' has ' /* JSX deletes newlines without converting them to spaces*/ }
+		{ state.figure.nVertices + ' vertices' } and { figure.nEdges + ' edges'}.
 	      </p>
-	      <Viewer viewSize={state.viewerSize} viewAngle={state.viewAngle}
-		      figure={state.figure} rotationStates={state.rotationStates}
-		      key={figure.name + figure.dimensions + state.viewAngle}
-		      />
+	      <div> {/* needed because the Viewer has a key */}
+		<Viewer viewSize={state.viewerSize} viewAngle={state.viewAngle}
+			figure={state.figure} rotationStates={state.rotationStates}
+			key={figure.name + figure.dimensions + state.viewAngle}
+			/>
+	      </div>
+              <footer>
+		Built on <a href="https://infernojs.org">Inferno</a> v{version}
+		--
+		Code on <a href='https://github.com/ssavitzky/hyperviewer'>GitHub</a>
+	      </footer>
 	    </div>
     );
   }
@@ -202,11 +206,18 @@ function SetViewAngle(props) {
 }
 
 function SelectDimensions(props) {
-    return (
-	<input type="range" value={props.value} min={props.min} max={props.max}
-	       onInput={props.callback} step={1}
-	       />
-    );
+    let list = [];
+    for (let d = MIN_DIM; d <= MAX_DIM; ++d) {
+	list.push(`${d}-D`);
+    }
+    return (<select onInput={props.callback} $HasKeyedChildren>
+	    { list.map((item, n) => {
+	      return (n === props.value)
+		  ?  <option value={n} key={item} selected>{item}</option>
+		  :  <option value={n} key={item}         >{item}</option>;
+	      })
+	    }
+	    </select> );
 }
 
 // Making this a class doesn't help the flicker
