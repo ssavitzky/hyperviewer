@@ -5,6 +5,9 @@ import {vector} from './transforms';
  * This package lets us create and transform n-dimensional polytopes.
  */
 
+const MIN_DIM = 2;
+const MAX_DIM = 6;
+
 /* 
  * Polytope.  
  *   .vertices is the list of vertices, in the form of vectors.
@@ -179,9 +182,6 @@ export class polytopeFactory {
     }
 }
 
-const MIN_DIM = 2;
-const MAX_DIM = 6;
-
 const polytopeFactories = [];
 for (let n = MIN_DIM; n <= MAX_DIM; n++) {
     polytopeFactories.push(new polytopeFactory(n));
@@ -190,5 +190,7 @@ function getPolytopeFactory(dim) {
     return polytopeFactories[dim - MIN_DIM];
 }
 export function getPolytopesFor(dimension) {
-    return getPolytopeFactory(dimension).polytopes;
+    //return getPolytopeFactory(dimension).polytopes;
+    return polytopeFactories[dimension - MIN_DIM].polytopes;
 }
+
