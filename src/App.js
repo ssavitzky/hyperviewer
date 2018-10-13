@@ -13,7 +13,7 @@ const MAX_DIM = 6;
 const MIN_DIM = 2;
 
 /*
- * NOTE:  something goes weirdly wrong the second time we try to make a simplex
+ * NOTE:  something goes wierdly wrong the second time we try to make a simplex
  *        _while the app is running_ -- nVertices and nEdges are wrong, and go
  *        wrong _while we are making the vertices_!.  I suspect that something
  *        isn't thread-safe, but it could also be due to our cavalier attitude
@@ -39,15 +39,14 @@ class App extends Component {
 	rotationStates.push(new rotationState(4, 0, 3, 20*DEGREES, 1*DEGREES));
 	rotationStates.push(new rotationState(5, 3, 4, 20*DEGREES, .2*DEGREES));
 
-	let state = this.setDimensions(dimensions, {
-	    dimensions: dimensions,
-	    figureIndex: defaultFigure,
-	    viewerSize: 500,
-	    viewAngle: 30*DEGREES,
-	    rotationStates: rotationStates,
-	    cycles: 0,
-	    
-	});
+	let state = this.setDimensions(dimensions,
+				       {
+					   figureIndex: defaultFigure,
+					   viewerSize: 500,
+					   viewAngle: 30*DEGREES,
+					   rotationStates: rotationStates,
+					   cycles: 0,
+				       });
 	this.state = state;
     }
     
@@ -57,7 +56,7 @@ class App extends Component {
 	state.figure = state.polytopeList[state.figureIndex];
 	state.dimensions = dimensions;
 	if (BUG) { new simplex(dimensions); }
-	// calling new simplex(dimensions) fails with the edge bug,
+	// new simplex(dimensions) fails mysteriously. Something's getting smashed
 	return state;
     }
 
