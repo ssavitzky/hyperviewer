@@ -212,9 +212,9 @@ function SelectDimensions(props) {
     }
     return (<select onInput={props.callback} $HasKeyedChildren>
 	    { list.map((item, n) => {
-	      return (n === props.value)
-		  ?  <option value={n} key={item} selected>{item}</option>
-		  :  <option value={n} key={item}         >{item}</option>;
+		return (n === (props.value - MIN_DIM))
+		  ?  <option value={n + MIN_DIM} key={item} selected>{item}</option>
+		  :  <option value={n + MIN_DIM} key={item}         >{item}</option>;
 	      })
 	    }
 	    </select> );
