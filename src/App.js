@@ -9,6 +9,7 @@ var defaultDimensions = 4;
 var defaultFigure = 1;
 
 const DEGREES = PI/180;
+const HERTZ   = 10;
 const MAX_DIM = 6;
 const MIN_DIM = 2;
 
@@ -144,7 +145,7 @@ class Viewer extends Component {
 	this.state = state; 
     }
     componentDidMount() {
-	this.timeID = setInterval( () => this.handleTimer(), 100 );
+	this.timeID = setInterval( () => this.handleTimer(), 1000/HERTZ );
     }
 
     componentWillUnmount() {
