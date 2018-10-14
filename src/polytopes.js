@@ -105,20 +105,29 @@ export class orthoplex extends polytope {
 /*
  * Simplex
  *	There are d+1 vertices.  d of the vertices are at +1 on each axis;
- *      the last is at [-x,...-x] with x = sqrt(1/dim); all vertices are
+ *      the last is at [-x,...-x] with x = -1/(1 + sqrt(1 + dim))
+ *      (see mathoverflow.net/questions/38724/coordinates-of-vertices-of-regular-simplex)
+ *      After that it has to be shifted to put the origin at the center, and scaled to be
  *      on the unit hypersphere.
+ *
+ * There is a mysterious bug:
+ *       The _second_ time a simplex is created _while the app is
+ *       running_, this.nVertice and this.nEdges are getting
+ *       clobbered, _in the middle of the constructor_.  WTF?
  */
 export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
 	/* Note:  not extending polytope doesn't change anything */
+	/*     ...nor does changing the class name in case there was a name conflict. */
 	this.name = 'simplex';
 	if (dim === 3) {
 	    this.aka.push('tetrahedron');
 	} else if (dim === 2) {
 	    this.aka.push('triangle');
 	}
-	// something goes massively wrong, right here.
+	let vertices = [];
+	/* something goes massively wrong, right here. */
 	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2) ||
 	    this.vertices.length !== 0 || this.edges.length !== 0 ) {
 	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
@@ -127,13 +136,18 @@ export class simplex extends polytope {
 			    ' at this point in the initialization, where dim = ' + dim +
 			    " in " + this.dimensions + '-D ' + this.name 
 			   );
-	}
+	} 
 	for (let i = 0; i < dim; ++i) {
-	    this.vertices.push(new vector(dim).fill((j) => i === j? 1.0 : 0));
+	    vertices.push(new vector(dim).fill((j) => i === j? 1.0 : 0));
 	}
-	let x = - sqrt(1.0/dim);
-	this.vertices.push(new vector(dim).fill((i) => x));
-	
+
+	let x = - sqrt(1.0/dim); // correct value is: - 1/(1 + sqrt(1 + dim));
+	// after that it has to be shifted so that it's centered on the origin,
+	// and then scaled until all the vertices are on the unit sphere.
+	vertices.push(new vector(dim).fill((i) => x));
+	this.vertices = vertices;
+	this.nVertices = vertices.length;  // setting this to dim+1 FAILS:
+	// in other words, this.nVertices is getting changed between these two statements!
 	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
 	    throw new Error("expect " + this.nVertices + " verts, have " + this.vertices.length +
 			    " in " + this.dimensions + '-D ' + this.name +
@@ -141,13 +155,16 @@ export class simplex extends polytope {
 			   );
 	}
 	// now the edges.
+	let edges = [];
 	for (let i = 0; i < dim + 1; i++) {
 	    // for each vertex except the last, 
 	    for (let j = i+1; j < dim + 1; ++j) {
 		// connect it to all the later ones
-		this.edges.push([i, j]);
+		edges.push([i, j]);
 	    }		
 	}
+	this.edges = edges;
+	this.nEdges = edges.length;
 	if (this.edges.length > this.nEdges) {
 	    throw new Error("expect " + this.nEdges + " but have " + this.edges.length +
 			    " in " + this.dimensions + '-D ' + this.name + ' with ' +
