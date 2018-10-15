@@ -5,8 +5,7 @@ import {vector} from './transforms';
  * This package lets us create and transform n-dimensional polytopes.
  */
 
-const MIN_DIM = 2;
-const MAX_DIM = 6;
+const MIN_DIM = 2;		// 1 dimension is a degenerate case
 
 /* 
  * Polytope.  
@@ -24,6 +23,12 @@ const MAX_DIM = 6;
  */
 class polytope {
     constructor(dim, nVertices, nEdges) {
+	/*
+	 * If we get here from a user input, it is possible that dim has not been 
+	 * properly converted to a number.  This only shows up in Simplex, because
+	 * nVertices is dim+1, so coercion happens in the wrong direction.  Ugh.
+	 */
+	if (typeof dim !== "number") { throw new Error("dim is a " + typeof dim); }
 	this.dimensions = dim;
 	this.nVertices = nVertices;
 	this.nEdges = nEdges;
@@ -42,7 +47,7 @@ class polytope {
  */
 export class cube extends polytope {
     constructor(dim) {
-	super(dim, 1 << dim, (1 << dim) * dim / 2);
+	super(dim, 2 ** dim, (2 ** dim) * dim / 2);	
 	this.name = 'cube';
 	this.aka.push('measure polytope');
 	if (dim === 4) {
@@ -109,15 +114,11 @@ export class orthoplex extends polytope {
  *      (see mathoverflow.net/questions/38724/coordinates-of-vertices-of-regular-simplex)
  *      After that it has to be shifted to put the origin at the center, and scaled to be
  *      on the unit hypersphere.
- *
- * There is a mysterious bug:
- *       The _second_ time a simplex is created _while the app is
- *       running_, this.nVertice and this.nEdges are getting
- *       clobbered, _in the middle of the constructor_.  WTF?
  */
 export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
+	if (typeof dim !== "number") { throw new Error("dim is a " + typeof dim); }
 	/* Note:  not extending polytope doesn't change anything */
 	/*     ...nor does changing the class name in case there was a name conflict. */
 	this.name = 'simplex';
@@ -127,16 +128,6 @@ export class simplex extends polytope {
 	    this.aka.push('triangle');
 	}
 	let vertices = [];
-	/* something goes massively wrong, right here. */
-	if (this.nVertices !== (dim + 1) || this.nEdges !== ((dim + 1) * dim / 2) ||
-	    this.vertices.length !== 0 || this.edges.length !== 0 ) {
-	    throw new Error("nEdges = " + this.nEdges + " want " +  ((dim + 1) * dim / 2) +
-			    "; nVertices = " + this.nVertices + " want " + dim +
-			    "; vertices.length = " + this.vertices.length +
-			    ' at this point in the initialization, where dim = ' + dim +
-			    " in " + this.dimensions + '-D ' + this.name 
-			   );
-	} 
 	for (let i = 0; i < dim; ++i) {
 	    vertices.push(new vector(dim).fill((j) => i === j? 1.0 : 0));
 	}
@@ -146,14 +137,7 @@ export class simplex extends polytope {
 	// and then scaled until all the vertices are on the unit sphere.
 	vertices.push(new vector(dim).fill((i) => x));
 	this.vertices = vertices;
-	this.nVertices = vertices.length;  // setting this to dim+1 FAILS:
-	// in other words, this.nVertices is getting changed between these two statements!
-	if (this.vertices.length !== this.nVertices || this.edges.length !== 0) {
-	    throw new Error("expect " + this.nVertices + " verts, have " + this.vertices.length +
-			    " in " + this.dimensions + '-D ' + this.name +
-			    "; want " + this.nEdges + " edges into " + this.edges.length
-			   );
-	}
+	
 	// now the edges.
 	let edges = [];
 	for (let i = 0; i < dim + 1; i++) {
@@ -188,24 +172,26 @@ export class polytopeFactory {
 	this.polytopes.push(new cube(dim));
     }
 
-    getPolytope(n) {
-	return this.polytopes[n];
-    }
-
     getPolytopes() {
 	return this.polytopes;
     }
 }
 
+/*
+ * Keep track of the factories we make so that we don't have to make one twice.
+ */
 const polytopeFactories = [];
-for (let n = MIN_DIM; n <= MAX_DIM; n++) {
-    polytopeFactories.push(new polytopeFactory(n));
-}
 function getPolytopeFactory(dim) {
+    while (dim >= polytopeFactories.length + MIN_DIM) {
+	polytopeFactories.push(new polytopeFactory(dim));
+    }
     return polytopeFactories[dim - MIN_DIM];
 }
+
+/*
+ * Get all the polytopes for a given dimensionality
+ */
 export function getPolytopesFor(dimension) {
-    //return getPolytopeFactory(dimension).polytopes;
-    return polytopeFactories[dimension - MIN_DIM].polytopes;
+    return getPolytopeFactory(dimension).polytopes;
 }
 

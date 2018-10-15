@@ -1,7 +1,7 @@
 import { version, Component } from 'inferno';
 import './registerServiceWorker';
 import {PI} from 'math';
-import {getPolytopesFor, simplex} from './polytopes';
+import {getPolytopesFor} from './polytopes';
 import {transformStack, rotationState} from './transform-stack';
 import './App.css';
 
@@ -12,18 +12,6 @@ const DEGREES = PI/180;
 const HERTZ   = 10;
 const MAX_DIM = 6;
 const MIN_DIM = 2;
-
-/*
- * NOTE:  something goes wierdly wrong the second time we try to make a simplex
- *        _while the app is running_ -- nVertices and nEdges are wrong, and go
- *        wrong _while we are making the vertices_!.  I suspect that something
- *        isn't thread-safe, but it could also be due to our cavalier attitude
- *        toward rotations, or a JavaScript scoping insanity.
- *        note that it's only the simplex -- cube works fine.
- *        Our hacky solution is simply to cache all the polytopes we're going to
- *        need, so that we don't have to do it twice.
- */
-const BUG = false; //true;
    
 class App extends Component {
     constructor(props) {
@@ -50,25 +38,44 @@ class App extends Component {
 				       });
 	this.state = state;
     }
-    
+
+    /*
+     * This function is shared between updateDimensions, called from the UI,
+     * and the constructor.
+     */
     setDimensions = (dimensions, oldstate) => {
 	let state = {...oldstate};
 	state.polytopeList = getPolytopesFor(dimensions);
 	state.figure = state.polytopeList[state.figureIndex];
 	state.dimensions = dimensions;
-	if (BUG) { new simplex(dimensions); }
-	// new simplex(dimensions) fails mysteriously. Something's getting smashed
 	return state;
     }
 
     updateDimensions = (dimensions) => {
+	/*
+	 * If we get here from a user input, it is possible that
+	 * dim has not been properly converted to a number.
+	 * Maybe throw up an alert in production?
+	 */
+	if (typeof dimensions !== "number") {
+	    throw new Error("dim is a " + typeof dimensions);
+	}
 	this.setState((oldstate, props) => {
 	    return this.setDimensions(dimensions, oldstate);
 	});
     }
-    handleDimensionChange = (event) => this.updateDimensions(event.target.value);
+    handleDimensionChange = (event) =>
+	this.updateDimensions(parseInt(event.target.value, 10));
 
     updateFigure(index) {
+	/*
+	 * If we get here from a user input, it is possible that
+	 * index has not been properly converted to a number.  
+	 * Maybe throw up an alert in production?
+	 */
+	if (typeof index !== "number") {
+	    throw new Error("dim is a " + typeof index);
+	}
 	this.setState((oldstate, props) => {
 	    let state = {...oldstate};
 	    state.figureIndex = index;
@@ -76,12 +83,12 @@ class App extends Component {
 	    return state;
 	});
     }
-    handleFigureChange = (event) => this.updateFigure(event.target.value);
+    handleFigureChange = (event) => this.updateFigure(parseInt(event.target.value, 10));
 
     updateViewAngle(angle) {
 	this.setState((oldstate, props) => {
 	    let state = {...oldstate};
-	    state.viewAngle = angle * DEGREES;
+	    state.viewAngle = angle * DEGREES; // this coerces angle to a float
 	    return state;
 	});
     }

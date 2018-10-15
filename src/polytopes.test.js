@@ -1,4 +1,5 @@
-import { cube, orthoplex, simplex, polytopeFactory } from './polytopes';
+import { cube, orthoplex, simplex, polytopeFactory, getPolytopesFor
+       } from './polytopes';
 import {abs} from 'math';
 
 it('has typed arrays', () => {
@@ -45,6 +46,7 @@ it('tests for roughlyEqual roughly correctly', () => {
 it('makes cubes with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
+	expect(theCube.name).toBe("cube")
 	expect(theCube.dimensions).toBe(dim);
 	expect(theCube.nVertices).toBe(1<<dim);
 	expect(theCube.vertices.length).toBe(1 << dim);
@@ -52,9 +54,10 @@ it('makes cubes with the right number of vertices and edges', () => {
     }
 });
 
-it('makes orthoplexs with the right number of vertices and edges', () => {
+it('makes orthoplexes with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theOrthoplex = new orthoplex(dim);
+	expect(theOrthoplex.name).toBe("orthoplex");
 	expect(theOrthoplex.dimensions).toBe(dim);
 	expect(theOrthoplex.nVertices).toBe(2 * dim);
 	expect(theOrthoplex.vertices.length).toBe(theOrthoplex.nVertices);
@@ -66,6 +69,7 @@ it('makes orthoplexs with the right number of vertices and edges', () => {
 it('makes simplices with the right number of vertices and edges', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theSimplex = new simplex(dim);
+	expect(theSimplex.name).toBe("simplex");
 	expect(theSimplex.dimensions).toBe(dim);
 	expect(theSimplex.nVertices).toBe(1 + dim);
 	expect(theSimplex.nEdges).toBe((dim + 1) * dim / 2);
@@ -96,25 +100,28 @@ it('puts vertices on the unit sphere', () => {
 });
 
 it('makes figures correctly in a factory', () => {
-    for (let d = 2; d < 4; d++) {
+    for (let d = 2; d < 6; d++) {
 	let factory = new polytopeFactory(d);
-	for (let f = 0; f < 3; f++) {
-	    let fig = factory.getPolytope(f);
+	factory.getPolytopes().map((fig) => {
 	    expect(fig.vertices.length).toBe(fig.nVertices);
 	    expect(fig.edges.length).toBe(fig.nEdges);
-	}
-	for (let f = 0; f < 3; f++) {
-	    let fig = factory.getPolytope(f);
-	    expect(fig.vertices.length).toBe(fig.nVertices);
-	    expect(fig.edges.length).toBe(fig.nEdges);
-	}
+	    expect(fig.dimensions).toBe(d);
+	});
     }
-    for (let d = 2; d < 4; d++) {
-	let factory = new polytopeFactory(d);
-	for (let f = 0; f < 3; f++) {
-	    let fig = factory.getPolytope(f);
+});
+
+it('gets the correct set of polytopes from getPolytopesFor(d)', () => {
+    for (let d = 2; d < 6; d++) {
+	let list = getPolytopesFor(d);
+	list.map((fig) => {
 	    expect(fig.vertices.length).toBe(fig.nVertices);
 	    expect(fig.edges.length).toBe(fig.nEdges);
-	}
+	    expect(fig.dimensions).toBe(d);
+	});
+	// get the same list back each time
+	expect(getPolytopesFor(d)).toBe(list);
+	// it should have at least three polytopes in it.
+	// Eventually we will add the additional ones for d=3 and 4
+	expect(list.length).toBeGreaterThanOrEqual(3); // simplex, kite, cube
     }
 });
