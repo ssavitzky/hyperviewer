@@ -128,14 +128,18 @@ export class simplex extends polytope {
 	    this.aka.push('triangle');
 	}
 	let vertices = [];
+	// In a simplex with all but one of the vertices at 1 on each axis,
+	let x = - 1/(1 + sqrt(1 + dim));  // [x...x] is the location of the final point
+	let y = sqrt(1/dim)*(1+x)/2; // (1+x)/2 is the distance to move the origin
+        // [sqrt(1/dim),...] is the unit vector in the direction we're moving.
+	// now we need to scale it so that the vertices are on the unit sphere.
+	// that last point is at [x-y...], so its norm is (x-y)sqrt(dim). So multiply
+	// everything by
+	let z = 1/((x-y)*sqrt(dim));
 	for (let i = 0; i < dim; ++i) {
-	    vertices.push(new vector(dim).fill((j) => i === j? 1.0 : 0));
+	    vertices.push(new vector(dim).fill((j) => i === j? z*(1-y) : z*(0-y)));
 	}
-
-	let x = - sqrt(1.0/dim); // correct value is: - 1/(1 + sqrt(1 + dim));
-	// after that it has to be shifted so that it's centered on the origin,
-	// and then scaled until all the vertices are on the unit sphere.
-	vertices.push(new vector(dim).fill((i) => x));
+	vertices.push(new vector(dim).fill((i) => z*(x-y)));
 	this.vertices = vertices;
 	
 	// now the edges.
@@ -182,8 +186,8 @@ export class polytopeFactory {
  */
 const polytopeFactories = [];
 function getPolytopeFactory(dim) {
-    while (dim >= polytopeFactories.length + MIN_DIM) {
-	polytopeFactories.push(new polytopeFactory(dim));
+    for (let d = polytopeFactories.length; d <= dim - MIN_DIM; ++d) {
+	polytopeFactories.push(new polytopeFactory(d + MIN_DIM));
     }
     return polytopeFactories[dim - MIN_DIM];
 }
