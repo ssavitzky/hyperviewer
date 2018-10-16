@@ -9,12 +9,12 @@
 
 PROD_BRANCH = prod
 
-BUILD_DIR = $(wildcard ../build build)
-
-
 # This really wants to be better parametrized.
 #	Note:  rsync ../build to its parent directory.
 UPLOAD_TO = savitzky.net:vv/prj/hyperviewer
+
+BUILD_DIR = $(wildcard ../build build)
+SERVER_GLOB = '[n]pm start'
 
 ###
 SHELL=/bin/bash
@@ -31,10 +31,12 @@ all::
 
 ### Building
 
-# If jekyll serve is running, you need to stop it before building.  Otherwise
-#	it will clobber _site if it notices that something has changed.
+# If the test server is running, you may need to stop it before building.  Otherwise
+#	it can clobber the build if it notices that something has changed.  This isn't
+#	a problem with React or Inferno, but it is with Jekyll.  Eventually it needs
+#	to be parametrized.
 #
-SERVER_PID = $(firstword $(shell ps x | grep '[s]cripts start'))
+SERVER_PID = $(firstword $(shell ps x | grep $(SERVER_GLOB)))
 kill-server:
 	@pid=$(SERVER_PID); if [ ! -z $$pid ]; then		\
 	    echo "Stopping server process.";			\
