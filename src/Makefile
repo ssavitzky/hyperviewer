@@ -14,7 +14,7 @@ PROD_BRANCH = prod
 UPLOAD_TO = savitzky.net:vv/prj/hyperviewer
 
 BUILD_DIR = $(wildcard ../build build)
-SERVER_GLOB = '[n]pm start'
+SERVER_GLOB = '[s]cripts/start'
 
 ###
 SHELL=/bin/bash
