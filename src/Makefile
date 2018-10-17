@@ -21,13 +21,13 @@ SHELL=/bin/bash
 
 # TARGETS has all of the targets a user is likely to make
 #	  there are some internal ones not listed here.
-TARGETS = production serve build github upload
+TARGETS = production serve build github upload test
 
 all::
 	@echo targets: $(TARGETS)
 	@echo usage:  'make draft name=SLUG title="TITLE"; edit; make post'
 
-.PHONY:  $(TARGETS) report-vars name-required draft-required 
+.PHONY:  $(TARGETS) report-vars kill-server
 
 ### Building
 
@@ -49,8 +49,7 @@ serve:
 	npm start
 
 # run tests
-#	Setting CI appears to be the way to make it run all tests and
-#	then quit.
+#	Setting CI makes it run all tests and then quit.
 test:
 	CI=true npm run test
 
