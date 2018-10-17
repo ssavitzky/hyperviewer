@@ -17,18 +17,10 @@ function roughlyEqual(v1, v2) {
     return abs(v1 - v2) < 1e-10? true : false;
 }
 
-function norm(v) {
-    let normSquared = 0.0;
-    for (let j = 0; j < v.dimensions; ++j) {
-	normSquared += v.get(j) ** 2;
-    }
-    return sqrt(normSquared);
-}
-
 // test whether a vertex is on the unit sphere.  We could use
 // toBeCloseTo 
 function onUnitSphere(vertex) {
-    return roughlyEqual(norm(vertex), 1.0);
+    return roughlyEqual(vertex.norm(), 1.0);
 }
 
 it('tests for roughlyEqual roughly correctly', () => {
@@ -106,7 +98,7 @@ it("puts a simplex's vertices somewhere near the unit sphere", () => {
 	    for (let i = 0; i < dim; ++i) {
 		// They're really pretty far off in some cases, like norm=.93
 		// which doesn't even pass with one digit of precision.  Bletch.
-		expect(norm(theSimplex.vertices[v])).toBeCloseTo(1, 0);
+		expect(theSimplex.vertices[v].norm()).toBeCloseTo(1, 0);
 	    }// so don't expect a test with 10 digits of precision to work
 	    //expect(onUnitSphere(theSimplex.vertices[v])).toBe(true);
 	}

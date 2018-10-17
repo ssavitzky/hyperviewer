@@ -1,4 +1,4 @@
-import {sin, cos} from 'math';
+import {sin, cos, sqrt} from 'math';
 
 /*
  * This package creates, composes, and applies linear transforms.
@@ -118,6 +118,14 @@ export class vector {
     
     put(n, v) {
 	 this.values[n] = v;
+    }
+
+    norm() {
+	let normSquared = 0.0;
+	for (let j = 0; j < this.dimensions; ++j) {
+	    normSquared += this.values[j] ** 2;
+	}
+	return sqrt(normSquared);
     }
     
 }
