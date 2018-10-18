@@ -119,8 +119,6 @@ export class simplex extends polytope {
     constructor(dim) {
 	super(dim, dim + 1, (dim + 1) * dim / 2);
 	if (typeof dim !== "number") { throw new Error("dim is a " + typeof dim); }
-	/* Note:  not extending polytope doesn't change anything */
-	/*     ...nor does changing the class name in case there was a name conflict. */
 	this.name = 'simplex';
 	if (dim === 3) {
 	    this.aka.push('tetrahedron');
