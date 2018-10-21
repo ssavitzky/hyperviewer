@@ -149,14 +149,6 @@ export class simplex extends polytope {
 		edges.push([i, j]);
 	    }		
 	}
-	this.edges = edges;
-	this.nEdges = edges.length;
-	if (this.edges.length > this.nEdges) {
-	    throw new Error("expect " + this.nEdges + " but have " + this.edges.length +
-			    " in " + this.dimensions + '-D ' + this.name + ' with ' +
-			    this.vertices.length + ' vertices, expecting ' + this.nVertices
-			   );
-	}
     }
 }
 
