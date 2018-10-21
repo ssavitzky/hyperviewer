@@ -78,37 +78,16 @@ it('puts vertices on the unit sphere', () => {
     for (let dim = 2; dim < 6; ++dim) {
 	let theCube = new cube(dim);
 	let theOrthoplex = new orthoplex(dim);
+	let theSimplex = new simplex(dim);
 	for (let v = 0; v < theCube.nVertices; ++v) {
-	    expect(theCube.vertices[v].dimensions).toBe(dim);
 	    expect(onUnitSphere(theCube.vertices[v])).toBe(true);
 	}
 	for (let v = 0; v < theOrthoplex.nVertices; ++v) {
-	    expect(theOrthoplex.vertices[v].dimensions).toBe(dim);
 	    expect(onUnitSphere(theOrthoplex.vertices[v])).toBe(true);
 	}
-    }
-});
-
-it("puts a simplex's vertices somewhere near the unit sphere", () => {
-    for (let dim = 2; dim < 8; ++dim) {
-	let theSimplex = new simplex(dim);
-	let worst = 0;
-	let worstv = 0;
 	for (let v = 0; v < theSimplex.nVertices; ++v) {
-	    expect(theSimplex.vertices[v].dimensions).toBe(dim);
-	    expect(theSimplex.nVertices).toBe(1 + dim);
-	    for (let v = 0; v < dim; ++v) {
-		// They're really pretty far off in some cases, like norm=.93
-		// which doesn't even pass with one digit of precision.  Bletch.
-		expect(theSimplex.vertices[v].norm()).toBeCloseTo(1, 0);
-		if (v === 0 || abs(theSimplex.vertices[v].norm() - 1) > worst) {
-		    worst = (theSimplex.vertices[v].norm() - 1);
-		    worstv = v;
-		}
-	    }// so don't expect a test with 10 digits of precision to work
-	    //expect(onUnitSphere(theSimplex.vertices[v])).toBe(true);
+	    expect(onUnitSphere(theSimplex.vertices[v])).toBe(true);
 	}
-	console.log(`worst vertex ${dim}-D simplex: v=${worstv} error=${worst}`);
     }
 });
 
