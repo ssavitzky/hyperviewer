@@ -6,7 +6,7 @@ import {transformStack, rotationState} from './transform-stack';
 import './App.css';
 
 var defaultDimensions = 4;
-var defaultFigure = 1;
+var defaultFigure = 2;
 
 const DEGREES = PI/180;
 const HERTZ   = 10;
