@@ -125,7 +125,6 @@ export class simplex extends polytope {
 	} else if (dim === 2) {
 	    this.aka.push('triangle');
 	}
-	let vertices = [];
 	// In a simplex with all but one of the vertices at 1 on each axis,
 	let x = - 1/(1 + sqrt(1 + dim));  // [x...x] is the location of the final point
 	// so the coordinates of the center must be the average point, which is at
@@ -135,18 +134,16 @@ export class simplex extends polytope {
 	// everything by
 	let z = 1/abs((x-y)*sqrt(dim));
 	for (let i = 0; i < dim; ++i) {
-	    vertices.push(new vector(dim).fill((j) => i === j? z*(1-y) : z*(0-y)));
+	    this.vertices.push(new vector(dim).fill((j) => i === j? z*(1-y) : z*(0-y)));
 	}
-	vertices.push(new vector(dim).fill((i) => z*(x-y)));
-	this.vertices = vertices;
+	this.vertices.push(new vector(dim).fill((i) => z*(x-y)));
 	
 	// now the edges.
-	let edges = [];
 	for (let i = 0; i < dim + 1; i++) {
 	    // for each vertex except the last, 
 	    for (let j = i+1; j < dim + 1; ++j) {
 		// connect it to all the later ones
-		edges.push([i, j]);
+		this.edges.push([i, j]);
 	    }		
 	}
     }
