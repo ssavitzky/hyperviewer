@@ -13,7 +13,9 @@ Currently only the simplex, octoplex, and cube are implemented.
 
 ... is pretty sketchy at this point, but there is a narrative of the
 development process at [Adventures in hyperspace (and
-JavaScript)](https://computer-curmudgeon.com/2018/10/08/adventures-in-hyperspace.html)
+JavaScript)](https://computer-curmudgeon.com/Blog/2018/10/08/adventures-in-hyperspace.html)
+and [Further Adventures in Hyperspace | Stephen
+Savitzky](https://computer-curmudgeon.com/Blog/2018/10/21/further-adventures-in-hyperspace/).
 
 ## To do
 
